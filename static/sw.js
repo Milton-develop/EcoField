@@ -1,12 +1,10 @@
 // ── 1. CACHE CONSTANTS ─────────────────────────────────────────
-const CACHE_NAME = 'ecofield-cache-v6';
+const CACHE_NAME = 'ecofield-cache-v7';
 const urlsToCache = [
   '/',
-  '/form',    
-  '/home',                          // ← ADDED: cache the form page for offline use
   '/static/css/style.css',
   '/static/manifest.json',
-  '/static/data.json',              // ← ADDED: needed for species dropdown offline
+  '/static/data.json',
   '/static/images/header.jpg',
   '/static/images/icon-192x192.png',
   '/static/images/icon-512x512.png'
@@ -192,36 +190,36 @@ self.addEventListener('fetch', event => {
     return; 
   }
 
+  // 4. Network-first for HTML pages (always get latest when online)
+  if (event.request.mode === 'navigate' || url.pathname === '/' || 
+      url.pathname === '/form' || url.pathname === '/home') {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          let responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then(cache => cache.put(event.request, responseToCache));
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request)
+            .then(cached => cached || caches.match('/form')
+              .then(formCached => formCached || new Response('Offline', { status: 503 })));
+        })
+    );
+    return;
+  }
+
+  // 5. Cache-first for static assets (CSS, JS, images, etc.)
   event.respondWith(
     caches.match(event.request)
-      .then(response => {
-        if (response && url.pathname !== '/') {
-          return response;
+      .then(response => response || fetch(event.request).then(res => {
+        if (res && res.status === 200) {
+          let resClone = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
         }
-
-        return fetch(event.request).then(
-          function(response) {
-            if(!response || response.status !== 200) {
-              return response;
-            }
-
-            var responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then(function(cache) {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          }
-        ).catch(() => {
-          // ← ADDED: if offline and navigating, serve the cached /form page
-          if (event.request.mode === 'navigate') {
-            return caches.match('/form');
-          }
-          return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
-        });
-      })
+        return res;
+      }))
   );
 });
 
