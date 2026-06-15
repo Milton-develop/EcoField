@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_groups.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" type="image/png" href="/static/images/icon-192x192.png">
+  <title>Issue Reports — Admin</title>
+  <style>
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-open { background: #fff3cd; color: #856404; }
+    .status-resolved { background: #d4edda; color: #155724; }
+    .status-closed { background: #e2e3e5; color: #383d41; }
+    .report-subject { font-weight: 600; color: #1b5e20; }
+    .report-desc {
+      font-size: 0.85rem;
+      color: #555;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .report-meta {
+      font-size: 0.8rem;
+      color: #888;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .toolbar .btn {
+      margin: 0;
+    }
+    @media (max-width: 768px) {
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0 1rem !important;
+        margin-bottom: 1rem;
+      }
+
+      .toolbar .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .report-desc {
+        max-width: 220px;
+      }
+
+      td[data-label="Action"] > div {
+        min-width: 220px;
+      }
+
+      td[data-label="Action"] button {
+        min-height: 36px;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% set active_sidebar = 'reports' %}
+
+  <div class="admin-layout">
+    {% include '_admin_sidebar.html' %}
+
+    <div class="admin-content">
+      <div class="head">
+        <h1 class="text">Issue Reports</h1>
+        <p>Student-submitted bug reports and feedback</p>
+      </div>
+
+      <div class="toolbar" style="padding: 0 2rem;">
+        <p style="margin:0; color:#666;">
+          {% if reports %}
+            <strong>{{ reports|length }}</strong> report{{ '' if reports|length == 1 else 's' }} total
+            —
+            <strong>{{ reports|selectattr('status', 'equalto', 'open')|list|length }}</strong> open
+          {% endif %}
+        </p>
+        <a href="{{ url_for('admin_reports_download') }}" class="btn" style="margin:0;">Download TXT</a>
+      </div>
+      
+      <main>
+        {% if reports %}
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Reporter</th>
+                <th>Category</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in reports %}
+              <tr>
+                <td data-label="Date" class="report-meta">{{ r.get('created_at', 'N/A') }}</td>
+                <td data-label="Reporter">
+                  <strong>{{ r.get('reporter_name', 'N/A') }}</strong>
+                  {% if r.get('group_id') %}
+                  <br><span class="report-meta">{{ r.get('group_id') }}</span>
+                  {% endif %}
+                  {% if r.get('student_id') %}
+                  <br><span class="report-meta">{{ r.get('student_id') }}</span>
+                  {% endif %}
+                </td>
+                <td data-label="Category">{{ r.get('category', 'N/A') }}</td>
+                <td data-label="Subject">
+                  <div class="report-subject">{{ r.get('subject', 'N/A') }}</div>
+                  <div class="report-desc" title="{{ r.get('description', '') }}">{{ r.get('description', '') }}</div>
+                </td>
+                <td data-label="Status">
+                  <span class="status-badge status-{{ r.get('status', 'open') }}">{{ r.get('status', 'open') }}</span>
+                </td>
+                <td data-label="Action">
+                  <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                    {% if r.get('status') != 'resolved' %}
+                    <form action="{{ url_for('update_report_status', report_id=r.id, status='resolved') }}" method="POST" style="margin:0;">
+                      <button type="submit" style="background:#2e7d32;color:white;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:0.8rem;">Resolve</button>
+                    </form>
+                    {% endif %}
+                    {% if r.get('status') != 'closed' %}
+                    <form action="{{ url_for('update_report_status', report_id=r.id, status='closed') }}" method="POST" style="margin:0;">
+                      <button type="submit" style="background:#6c757d;color:white;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:0.8rem;">Close</button>
+                    </form>
+                    {% endif %}
+                    {% if r.get('status') != 'open' %}
+                    <form action="{{ url_for('update_report_status', report_id=r.id, status='open') }}" method="POST" style="margin:0;">
+                      <button type="submit" style="background:#ffc107;color:#333;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:0.8rem;">Reopen</button>
+                    </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:3rem; color:#999;">
+          <p style="font-size:1.2rem;">No reports submitted yet.</p>
+          <p>When students submit issues, they will appear here.</p>
+        </div>
+        {% endif %}
+      </main>
+    </div>
+  </div>
+
+</body>
+</html>

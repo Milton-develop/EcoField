@@ -1,0 +1,20 @@
+# --- Web Frameworks ---
+Flask
+streamlit
+
+# --- Data Analysis & Visualization ---
+pandas
+plotly
+
+# --- Deployment Utilities ---
+gunicorn
+python-dotenv
+
+# --- Database & Backend ---
+supabase
+
+# --- Hashing the Password on supabase ---
+bcrypt
+
+# --- PDF Parsing for Bulk Group Import ---
+pypdf

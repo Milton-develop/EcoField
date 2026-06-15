@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_groups.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/group.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" type="image/png" href="/static/images/icon-192x192.png">
+  <title>Admin Dashboard</title>
+  <style>
+    .stepper-navigation {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: rgb(204, 240, 204);
+      border-radius: 10px;
+    }
+
+    .stepper-navigation p {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      gap: 0.3rem;
+    }
+
+    .step-one {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: rgb(31, 194, 31);
+      color: #333;
+      text-decoration: none;
+      font-size: 1.2em;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    .step-one:hover {
+      background-color: rgb(18, 137, 18);
+    }
+
+    .step-one.active {
+      background-color: rgb(31, 194, 31);
+      color: white;
+      box-shadow: 0 0 0 5px rgb(18, 137, 18);
+    }
+
+    .step-label {
+      color: #1b5e20;
+      font-size: 0.85rem;
+    }
+
+    .first-page {
+      display: block;
+    }
+
+    .first-page.hidden {
+      display: none;
+    }
+
+    .student-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .student-row input {
+      flex: 1;
+    }
+
+    .student-row .remove-student {
+      background: #e53935;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 0.8rem;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .add-student-btn {
+      background: #2e7d32;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+
+    .add-student-btn:hover {
+      background: #1b5e20;
+    }
+
+    .step-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: space-between;
+      margin-top: 1.5rem;
+    }
+
+    .step-buttons .btn,
+    .step-buttons .prev-btn {
+      padding: 0.6rem 1.5rem;
+    }
+
+    .prev-btn {
+      background: #757575;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.6rem 1.5rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    .prev-btn:hover {
+      background: #616161;
+    }
+
+    #safety.step-container {
+      min-height: 320px;
+    }
+
+    .import-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1.25rem;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #2e7d32;
+    }
+
+    .import-tab {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      border: none;
+      background: #e8f5e9;
+      color: #2e7d32;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .import-tab:not(:last-child) {
+      border-right: 1px solid #2e7d32;
+    }
+
+    .import-tab.active {
+      background: #2e7d32;
+      color: white;
+    }
+
+    .import-tab:hover:not(.active) {
+      background: #c8e6c9;
+    }
+
+    .import-panel {
+      display: none;
+    }
+
+    .import-panel.active {
+      display: block;
+    }
+
+    .drop-zone {
+      border: 2px dashed #2e7d32;
+      border-radius: 10px;
+      padding: 1.5rem;
+      text-align: center;
+      background: #f1f8e9;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      margin-bottom: 0.75rem;
+      position: relative;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      background: #dcedc8;
+      border-color: #1b5e20;
+    }
+
+    .drop-zone-content p {
+      margin: 0.3rem 0;
+      color: #555;
+    }
+
+    .drop-icon {
+      margin-bottom: 0.3rem;
+    }
+
+    .browse-link {
+      color: #2e7d32;
+      font-weight: 600;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .drop-zone-hint {
+      font-size: 0.8rem;
+      color: #888 !important;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      background: #e8f5e9;
+      border-radius: 6px;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .remove-file-btn {
+      background: #e53935;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bulk-progress {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: #e3f2fd;
+      border-radius: 8px;
+      margin: 0.75rem 0;
+      color: #1565c0;
+      font-size: 0.9rem;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid #bbdefb;
+      border-top: 3px solid #1565c0;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .bulk-results {
+      margin: 0.75rem 0;
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .bulk-results.success {
+      background: #e8f5e9;
+      border: 1px solid #2e7d32;
+      color: #1b5e20;
+    }
+
+    .bulk-results.error {
+      background: #ffebee;
+      border: 1px solid #e53935;
+      color: #b71c1c;
+    }
+
+    .bulk-results ul {
+      margin: 0.5rem 0 0;
+      padding-left: 1.25rem;
+    }
+
+    .bulk-results li {
+      margin-bottom: 0.4rem;
+    }
+
+    .pw-edit-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .pw-edit-row input {
+      padding: 0.3rem 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: monospace;
+      width: 150px;
+    }
+
+    .pw-edit-row input.changed {
+      border-color: #f57c00;
+      background: #fff3e0;
+    }
+
+    .pw-save-btn {
+      padding: 0.3rem 0.6rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      background: #2e7d32;
+      color: white;
+      font-weight: 600;
+    }
+
+    .pw-save-btn:hover {
+      background: #1b5e20;
+    }
+
+    .pw-save-btn:disabled {
+      background: #a5d6a7;
+      cursor: default;
+    }
+
+    .pw-save-btn.saving {
+      background: #1565c0;
+    }
+
+    .pw-status {
+      font-size: 0.78rem;
+    }
+
+    .pw-status.saved {
+      color: #2e7d32;
+    }
+
+    .pw-status.error {
+      color: #e53935;
+    }
+
+    .download-csv-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+      padding: 0.5rem 1rem;
+      border: 2px solid #2e7d32;
+      border-radius: 6px;
+      background: white;
+      color: #2e7d32;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .download-csv-btn:hover {
+      background: #e8f5e9;
+    }
+
+    @media (max-width: 768px) {
+      .stepper-navigation {
+        gap: 1rem;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .step-one {
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+      }
+
+      .step-one.active {
+        box-shadow: 0 0 0 4px rgb(18, 137, 18);
+      }
+
+      .step-label {
+        font-size: 0.72rem;
+        text-align: center;
+      }
+
+      .student-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+        align-items: stretch;
+      }
+
+      .student-row input {
+        grid-column: 1 / -1;
+        min-width: 0;
+      }
+
+      .student-row .remove-student {
+        grid-column: 1 / -1;
+        width: 100%;
+        padding: 0.6rem;
+      }
+
+      .add-student-btn {
+        width: 100%;
+        min-height: 42px;
+      }
+
+      .step-buttons {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .step-buttons .btn,
+      .step-buttons .prev-btn {
+        width: 100%;
+        margin: 0;
+      }
+
+      .import-tab {
+        font-size: 0.8rem;
+        padding: 0.5rem;
+      }
+
+      .drop-zone {
+        padding: 1rem;
+      }
+
+      .drop-icon {
+        width: 36px;
+        height: 36px;
+      }
+
+      #safety.step-container,
+      #safety {
+        min-height: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% set active_sidebar = 'manage' %}
+
+  <div class="admin-layout">
+    {% include '_admin_sidebar.html' %}
+
+    <div class="admin-content">
+      <div class="head">
+        <h1 class="text">Survey Management</h1>
+        <p>Academic Year: <strong>{{ year }}</strong></p>
+        {% if error %}
+          <p class="error">{{ error }}</p>
+        {% endif %}
+        {% if success %}
+          <p class="success">{{ success }}</p>
+        {% endif %}
+        {% if message %}
+          <p class="success">{{ message }}</p>
+        {% endif %}
+      </div>
+
+      <main>
+
+        <div class="help-container" id="safety" style="max-width: 600px;">
+          <h2>Add New Group</h2>
+
+          <div class="stepper-navigation">
+            <p>
+              <a href="#" class="step-one active" data-step="1">1</a>
+              <span class="step-label">Create Group</span>
+            </p>
+            <p>
+              <a href="#" class="step-one" data-step="2">2</a>
+              <span class="step-label">Add Students</span>
+            </p>
+          </div>
+
+          <form method="POST" action="/manage_groups" id="groupForm" novalidate>
+
+            <!-- ===== STEP 1: Create Group ===== -->
+            <div id="step-1" class="first-page">
+              <label for="admin_password">Admin Password</label>
+              <div class="password-container">
+                <input type="password" name="admin_password" id="admin_password" required>
+                <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+                  <svg class="eye-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                  </svg>
+                </button>
+              </div>
+
+              <label for="group_id">Group ID</label>
+              <input type="text" name="group_id" id="group_id" required style="width: 92%;">
+
+              <label for="password">Group Password</label>
+              <input type="text" name="password" id="password" required style="width: 92%;">
+
+              <div class="step-buttons" style="justify-content: flex-end;">
+                <button type="button" class="btn next-btn" data-next-step="2">Next &rarr;</button>
+              </div>
+            </div>
+
+            <!-- ===== STEP 2: Add Students ===== -->
+            <div id="step-2" class="first-page hidden">
+              <p style="color: #555; margin-bottom: 1rem;">
+                Register students under <strong id="step2GroupId">this group</strong>.
+              </p>
+              <input type="hidden" name="group_id_step2" id="group_id_step2" value="">
+
+              <div class="import-tabs">
+                <button type="button" class="import-tab active" data-tab="manual">Manual Entry</button>
+                <button type="button" class="import-tab" data-tab="bulk">Bulk Import (PDF)</button>
+              </div>
+
+              <div id="import-manual" class="import-panel active">
+                <div id="studentList">
+                  <div class="student-row">
+                    <input type="text" name="student_id[]" placeholder="Student ID" required>
+                    <input type="text" name="student_name[]" placeholder="Student Name" required>
+                    <button type="button" class="remove-student" onclick="this.parentElement.remove()" style="display:none;">&times;</button>
+                  </div>
+                </div>
+                <button type="button" class="add-student-btn" onclick="addStudentRow()">+ Add Student</button>
+              </div>
+
+              <div id="import-bulk" class="import-panel">
+                <div class="bulk-form">
+                  <label for="students_per_group">Students per Group:</label>
+                  <input type="number" id="students_per_group" value="10" min="1" required>
+
+                  <br>
+
+                  <label for="group_prefix">Group ID Prefix:</label>
+                  <input type="text" id="group_prefix" value="Group" placeholder="e.g. Bio, Eco, Field">
+
+                  <br>
+
+                  <label>Upload Student PDF</label>
+                  <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-content" id="dropZoneContent">
+                      <svg class="drop-icon" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#2e7d32" stroke-width="1.5">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                      <p>Drag & drop a PDF here, or <span class="browse-link" id="browseLink">browse</span></p>
+                      <p class="drop-zone-hint">PDF should contain Student ID and Name per line (CSV or tab-separated)</p>
+                    </div>
+                    <input type="file" id="pdfFileInput" accept=".pdf" style="display:none">
+                    <div id="fileInfo" class="file-info" style="display:none">
+                      <span id="fileName"></span>
+                      <button type="button" id="removeFileBtn" class="remove-file-btn">&times;</button>
+                    </div>
+                  </div>
+
+                  <div id="bulkProgress" class="bulk-progress" style="display:none">
+                    <div class="spinner"></div>
+                    <span>Processing PDF and creating groups...</span>
+                  </div>
+
+                  <div id="bulkResults" class="bulk-results" style="display:none"></div>
+
+                  <button type="button" id="bulkUploadBtn" class="btn" style="margin-top:1rem;width:100%" disabled>Import &amp; Create Groups</button>
+                </div>
+              </div>
+
+              <div class="step-buttons">
+                <button type="button" class="btn" data-prev-step="1">&larr; Previous</button>
+                <button type="submit" class="btn" id="createGroupBtn">Create Group</button>
+              </div>
+            </div>
+
+          </form>
+        </div>
+
+      </main>
+
+      <script>
+        const eyePath = "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z";
+        const eyeSlashPath = "M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.82l2.92 2.92c1.51-1.26 2.7-2.89 3.44-4.74-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z";
+
+        document.querySelectorAll('.toggle-password').forEach(button => {
+          button.addEventListener('click', function() {
+            const input = this.closest('.password-container').querySelector('input');
+            const path = this.querySelector('path');
+            if (input.type === 'password') {
+              input.type = 'text';
+              path.setAttribute('d', eyeSlashPath);
+            } else {
+              input.type = 'password';
+              path.setAttribute('d', eyePath);
+            }
+          });
+        });
+
+        // ---- Stepper ----
+        document.addEventListener('DOMContentLoaded', function() {
+          const stepNumbers = document.querySelectorAll('.step-one');
+          const formSections = document.querySelectorAll('.first-page');
+          const navButtons = document.querySelectorAll('.next-btn, .btn');
+
+          function showStep(stepToShow) {
+            formSections.forEach(function(section) {
+              section.classList.add('hidden');
+              section.classList.remove('active');
+            });
+            stepNumbers.forEach(function(step) {
+              step.classList.remove('active');
+            });
+
+            var targetSection = document.getElementById('step-' + stepToShow);
+            if (targetSection) {
+              targetSection.classList.remove('hidden');
+              targetSection.classList.add('active');
+            }
+
+            var targetStepNumber = document.querySelector('.step-one[data-step="' + stepToShow + '"]');
+            if (targetStepNumber) {
+              targetStepNumber.classList.add('active');
+            }
+
+            // When moving to step 2, copy group_id from step 1
+            if (stepToShow === '2') {
+              var groupId = document.getElementById('group_id').value;
+              document.getElementById('step2GroupId').textContent = groupId || '(enter a Group ID first)';
+              document.getElementById('group_id_step2').value = groupId;
+            }
+          }
+
+          stepNumbers.forEach(function(step) {
+            step.addEventListener('click', function(e) {
+              e.preventDefault();
+              var stepToShow = e.currentTarget.getAttribute('data-step');
+              showStep(stepToShow);
+            });
+          });
+
+          navButtons.forEach(function(button) {
+            button.addEventListener('click', function(e) {
+              var nextStep = e.currentTarget.getAttribute('data-next-step');
+              var prevStep = e.currentTarget.getAttribute('data-prev-step');
+
+              if (nextStep) {
+                showStep(nextStep);
+              } else if (prevStep) {
+                showStep(prevStep);
+              }
+            });
+          });
+        });
+
+        // ---- Dynamic student rows ----
+        function addStudentRow() {
+          var list = document.getElementById('studentList');
+          var row = document.createElement('div');
+          row.className = 'student-row';
+          row.innerHTML =
+            '<input type="text" name="student_id[]" placeholder="Student ID" required>' +
+            '<input type="text" name="student_name[]" placeholder="Student Name" required>' +
+            '<button type="button" class="remove-student" onclick="this.parentElement.remove()">&times;</button>';
+          list.appendChild(row);
+        }
+
+        // ---- Import Tab Switching ----
+        document.querySelectorAll('.import-tab').forEach(function(tab) {
+          tab.addEventListener('click', function() {
+            document.querySelectorAll('.import-tab').forEach(function(t) { t.classList.remove('active'); });
+            document.querySelectorAll('.import-panel').forEach(function(p) { p.classList.remove('active'); });
+            this.classList.add('active');
+            document.getElementById('import-' + this.getAttribute('data-tab')).classList.add('active');
+            // Toggle manual submit vs bulk import
+            var createBtn = document.getElementById('createGroupBtn');
+            if (this.getAttribute('data-tab') === 'bulk') {
+              createBtn.style.display = 'none';
+            } else {
+              createBtn.style.display = '';
+            }
+          });
+        });
+
+        // ---- Drag & Drop ----
+        var dropZone = document.getElementById('dropZone');
+        var fileInput = document.getElementById('pdfFileInput');
+        var fileInfo = document.getElementById('fileInfo');
+        var fileName = document.getElementById('fileName');
+        var removeFileBtn = document.getElementById('removeFileBtn');
+        var bulkUploadBtn = document.getElementById('bulkUploadBtn');
+        var selectedFile = null;
+
+        function updateFileUI(file) {
+          selectedFile = file;
+          if (file) {
+            document.getElementById('dropZoneContent').style.display = 'none';
+            fileInfo.style.display = 'flex';
+            fileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+            bulkUploadBtn.disabled = false;
+          } else {
+            document.getElementById('dropZoneContent').style.display = '';
+            fileInfo.style.display = 'none';
+            fileName.textContent = '';
+            bulkUploadBtn.disabled = true;
+          }
+        }
+
+        dropZone.addEventListener('click', function(e) {
+          if (e.target.closest('.remove-file-btn')) return;
+          fileInput.click();
+        });
+
+        dropZone.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          this.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', function() {
+          this.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', function(e) {
+          e.preventDefault();
+          this.classList.remove('drag-over');
+          if (e.dataTransfer.files.length > 0) {
+            var file = e.dataTransfer.files[0];
+            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+              fileInput.files = e.dataTransfer.files;
+              updateFileUI(file);
+            } else {
+              alert('Please upload a PDF file.');
+            }
+          }
+        });
+
+        fileInput.addEventListener('change', function() {
+          if (this.files.length > 0) {
+            updateFileUI(this.files[0]);
+          }
+        });
+
+        removeFileBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          fileInput.value = '';
+          updateFileUI(null);
+        });
+
+        document.getElementById('browseLink').addEventListener('click', function(e) {
+          e.stopPropagation();
+          fileInput.click();
+        });
+
+        document.addEventListener('input', function(e) {
+          if (e.target.classList.contains('pw-input')) {
+            e.target.classList.add('changed');
+          }
+        });
+
+        // ---- Save Password ----
+        function savePassword(btn) {
+          var groupId = btn.getAttribute('data-group');
+          var input = document.querySelector('.pw-input[data-group="' + groupId + '"]');
+          var newPw = input.value.trim();
+          var status = btn.parentElement.querySelector('.pw-status');
+
+          if (!newPw || newPw.length < 4) {
+            status.className = 'pw-status error';
+            status.textContent = 'Min 4 chars';
+            return;
+          }
+
+          btn.disabled = true;
+          btn.classList.add('saving');
+          btn.textContent = 'Saving...';
+          status.className = 'pw-status';
+          status.textContent = '';
+
+          var fd = new FormData();
+          fd.append('admin_password', document.getElementById('admin_password').value);
+          fd.append('group_id', groupId);
+          fd.append('new_password', newPw);
+
+          fetch('/manage_groups/update-password', { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              if (data.success) {
+                status.className = 'pw-status saved';
+                status.textContent = 'Saved';
+                input.classList.remove('changed');
+                // Update stored data for CSV
+                if (window._lastBulkData) {
+                  window._lastBulkData.groups_created.forEach(function(g) {
+                    if (g.group_id === groupId) g.password = newPw;
+                  });
+                }
+              } else {
+                status.className = 'pw-status error';
+                status.textContent = data.error || 'Error';
+              }
+            })
+            .catch(function() {
+              status.className = 'pw-status error';
+              status.textContent = 'Network error';
+            })
+            .finally(function() {
+              btn.disabled = false;
+              btn.classList.remove('saving');
+              btn.textContent = 'Save';
+            });
+        }
+
+        // ---- Download Groups CSV (no passwords) ----
+        function downloadGroupsCSV() {
+          var data = window._lastBulkData;
+          if (!data || !data.groups_created) return;
+
+          var rows = [['Group ID', 'Student ID', 'Student Name']];
+          data.groups_created.forEach(function(g) {
+            if (g.students) {
+              g.students.forEach(function(s) {
+                rows.push([g.group_id, s.student_id, s.student_name]);
+              });
+            }
+          });
+
+          var csv = rows.map(function(r) {
+            return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(',');
+          }).join('\n');
+
+          var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+          var link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'groups.csv';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+        }
+
+        // ---- Bulk Upload AJAX ----
+        bulkUploadBtn.addEventListener('click', function() {
+          if (!selectedFile) return;
+
+          var formData = new FormData();
+          formData.append('pdf_file', selectedFile);
+          formData.append('admin_password', document.getElementById('admin_password').value);
+          formData.append('students_per_group', document.getElementById('students_per_group').value);
+          formData.append('group_prefix', document.getElementById('group_prefix').value);
+
+          var progress = document.getElementById('bulkProgress');
+          var results = document.getElementById('bulkResults');
+          progress.style.display = 'flex';
+          results.style.display = 'none';
+          results.className = 'bulk-results';
+          bulkUploadBtn.disabled = true;
+
+          fetch('/manage_groups/bulk-upload', {
+            method: 'POST',
+            body: formData
+          })
+          .then(function(response) {
+            return response.json().then(function(data) {
+              return { status: response.status, data: data };
+            });
+          })
+          .then(function(obj) {
+            progress.style.display = 'none';
+            bulkUploadBtn.disabled = false;
+            results.style.display = 'block';
+
+            if (obj.data.success) {
+              var d = obj.data;
+              window._lastBulkData = d;
+              var html = '<strong>&#10003; ' + d.total_groups + ' groups created successfully!</strong>';
+              html += '<p>' + d.total_students + ' students distributed across ' + d.total_groups + ' groups.</p>';
+              html += '<ul>';
+              d.groups_created.forEach(function(g) {
+                html += '<li>';
+                html += '<strong>' + g.group_id + '</strong> &mdash; ';
+                html += '<span class="pw-edit-row">';
+                html += 'Password: <input type="text" class="pw-input" data-group="' + g.group_id + '" value="' + g.password + '">';
+                html += '<button type="button" class="pw-save-btn" data-group="' + g.group_id + '" onclick="savePassword(this)">Save</button>';
+                html += '<span class="pw-status"></span>';
+                html += '</span>';
+                html += ' (' + g.student_count + ' students)';
+                html += '</li>';
+              });
+              html += '</ul>';
+              html += '<button type="button" class="download-csv-btn" onclick="downloadGroupsCSV()">&#8595; Download Groups CSV (no passwords)</button>';
+              results.className = 'bulk-results success';
+              results.innerHTML = html;
+              // Reset file input
+              fileInput.value = '';
+              updateFileUI(null);
+            } else {
+              results.className = 'bulk-results error';
+              results.innerHTML = '<strong>&#10007; Error:</strong> ' + (obj.data.error || 'Unknown error');
+            }
+          })
+          .catch(function(err) {
+            progress.style.display = 'none';
+            bulkUploadBtn.disabled = false;
+            results.style.display = 'block';
+            results.className = 'bulk-results error';
+            results.innerHTML = '<strong>&#10007; Network error:</strong> ' + err.message;
+          });
+        });
+      </script>
+    </div>
+  </div>
+</body>
+</html>

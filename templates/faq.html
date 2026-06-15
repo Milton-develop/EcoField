@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - EcoField Logger</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/faq.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+     <link rel="icon" href="/static/images/icon-192x192.png">
+</head>
+<body>
+    <!-- ===== NAVIGATION ===== -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <h5>University of Ghana &bull; School of Biological Sciences</h5>
+             {%if session.get('user_role')=='admin'%}
+                <h2 class="user">ADMIN USER</h2>
+             {%endif%}
+             {%if session.get('user_role')=='student'%}
+                <h2 class="user">STUDENT USER</h2>
+             {%endif%}
+            <div class="nav-links">
+                {%if session.get('user_role') == 'student'%}
+        <a href="/logout" class="btn-logout">Home</a>
+        {%endif%}
+        {%if session.get('user_role') == 'admin'%}
+        <a href="/admin/logout" class="btn-logout">Home</a>
+        {%endif%}
+                <a href="/help">Help</a>
+                <a href="/faq" class="active">FAQ</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="faq-container">
+        <div class="faq-header">
+            <h1>Frequently Asked Questions</h1>
+            <p>Technical and general information about the EcoField Logger project</p>
+        </div>
+
+        <!-- I. CONCEPT & RATIONALE -->
+        <section class="faq-category">
+            <h2>I. Concept & Rationale</h2>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Why was EcoField Logger developed instead of using existing tools like KoboToolbox, ODK Collect, or EpiCollect5?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>While tools like ODK and Kobo are powerful, they are generic. EcoField Logger was custom-built to align perfectly 
+                            with the University of Ghana’s biological sciences curriculum. It features a local species database specifically 
+                            for Ghana’s ecosystems, a group-based system that mirrors student lab groups, and an integrated dashboard
+                             that calculates ecological metrics automatically.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What specific problem does the system solve for ecological field research?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>It solves the "Connectivity Gap." In remote areas like Shai Hills or Achimota Forest, internet is unreliable. Paper records are easily lost or damaged. EcoField Logger provides a digital, standardized, and offline-capable alternative that ensures data is captured accurately at the moment of observation.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Why was a Progressive Web App (PWA) chosen instead of a native Android/iOS app?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>A PWA offers the best of both worlds. It avoids the friction of "App Store" downloads, works on any device (Android, iPhone, or Laptop), and allows for instant updates without user intervention. It is lightweight and highly accessible for students with varying device specifications.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- II. TECHNICAL ARCHITECTURE & OFFLINE MECHANICS -->
+        <section class="faq-category">
+            <h2>II. Technical Architecture & Offline Mechanics</h2>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How does the offline synchronization system work technically?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>The app uses a Service Worker to intercept network requests. When a submission occurs offline:</p>
+                        <ul>
+                            <li>Data is serialized and stored in the browser’s IndexedDB.</li>
+                            <li>A Sync Tag is registered with the browser.</li>
+                            <li>Once internet is detected, the 'sync' event triggers a background process that uploads the stored records to the Flask backend.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What happens if synchronization fails during reconnection?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>The system uses transactional logic. A record is only marked as "synced" in the local database after the server returns a successful status code. If the upload fails, the record remains in the "Pending" state and will retry automatically.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How does the system prevent duplicate records during syncing?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>Each record is assigned a unique timestamp and ID. client-side logic ensures that once a record is successfully sent, it is flagged as synced, preventing it from being included in future sync batches.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How are photos stored and synchronized while offline?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>Photos are converted into Base64 strings (text representation of binary data) and stored in IndexedDB. During synchronization, these strings are sent to the server, decoded back into image files, and saved to the server's filesystem.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What are the storage limitations of IndexedDB in the application?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>Storage is determined by the device and browser, typically allowing for hundreds of megabytes. This is more than enough for thousands of text records and several dozen high-resolution field photos.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- III. SECURITY & DATA INTEGRITY -->
+        <section class="faq-category">
+            <h2>III. Security & Data Integrity</h2>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How secure is the platform?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>The platform utilizes HTTPS for all data transfers. Access is tiered: students can only see their group's data via password-protected login, while the Admin panel is isolated behind a separate, secure credential system.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How are passwords stored and protected?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>The system uses Bcrypt hashing. Instead of storing actual passwords, the database stores a secure hash. This ensures that even if the database were compromised, actual passwords remain unreadable.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How does the system protect ecological and student data?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>Data is maintained through Supabase's secure cloud environment. Student identifiers are kept within a private observations table, and the Archive feature allows admins to move sensitive data to offline storage annually.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- IV. TECHNOLOGIES & TOOLS -->
+        <section class="faq-category">
+            <h2>IV. Technologies & Tools</h2>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What technologies were used and why were they selected?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <ul>
+                            <li><strong>Flask:</strong> For its speed and flexibility in building lightweight APIs.</li>
+                            <li><strong>Supabase:</strong> For robust data management and real-time capabilities.</li>
+                            <li><strong>Vanilla JS/CSS:</strong> To keep the app lightweight and fast.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Why was Supabase chosen as the database backend?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>Supabase provides the power of PostgreSQL with the ease of a cloud API. It allowed for rapid development while ensuring the data is hosted on secure, industry-standard infrastructure.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What is the structure of the database?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>The database consists of three primary tables: 'observations' (field data), 'manage_groups' (group credentials), and 'admin_settings' (system configurations).</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How are species records organized in the database?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>Species are stored as structured text lists. The frontend provides a standardized dropdown based on a master list, while also supporting manual entry for new species discovery.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How are group submissions managed and linked?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>Every observation is tagged with a group_id. When a group logs in, the backend filters the data to ensure students only see and manage the records their group collected.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- V. DEVELOPMENT & TESTING -->
+        <section class="faq-category">
+            <h2>V. Development & Testing</h2>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What software development methodology was used during development?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>An Agile/Iterative approach was used. The project began with a Minimum Viable Product which was expanded with features like the Admin Dashboard and Photo Uploads based on testing results.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How was the user interface designed for field usability?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>The UI follows Mobile-First principles: large buttons for ease of use, high-contrast colors for visibility under sunlight, and a multi-step progress bar to simplify the data entry process.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What testing methods were used to evaluate the system?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>The app underwent simulated field testing using browser tools to mimic zero-bandwidth conditions, as well as cross-device testing on Android and iOS to ensure PWA functionality.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Was the app tested in real offline field conditions?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>Yes. The app was tested by simulating movement between connected and disconnected zones while performing full data entries and verifying the subsequent sync process.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VI. COMPATIBILITY & SCALABILITY -->
+        <section class="faq-category">
+            <h2>VI. Compatibility & Scalability</h2>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What devices and browsers support the system?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>The system supports all modern browsers (Chrome, Safari, Firefox, Edge). It is optimized for mobile devices but works perfectly on tablets and laptops.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What are the current limitations of the system?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>The primary limitations include varying Background Sync support on iOS Safari and the potential warm-up delay on the free hosting tier during periods of inactivity.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How scalable is the system for use outside the University of Ghana?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>The architecture is highly scalable. The database and species lists can be easily adapted to accommodate any flora/fauna region or different institutional structures.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Can the platform support larger biodiversity or conservation projects in the future?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>Yes. The system could be expanded to include Multi-Tenancy, allowing different organizations to have isolated EcoField Logger instances on the same infrastructure.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VII. IMPACT & FUTURE DIRECTIONS -->
+        <section class="faq-category">
+            <h2>VII. Impact & Future Directions</h2>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How does the system improve ecological data accuracy compared to paper-based methods?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>It eliminates transcription errors. By using standardized dropdowns and auto-captured GPS data, the "cleanliness" of the data is ensured at the source.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How does the project contribute to conservation science and ecological informatics?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>It bridges fieldwork and data science. By digitizing data at the source, it enables Real-Time Ecology, allowing researchers to see trends as they happen.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What impact could the system have on ecological education and research in Ghana?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>It empowers the next generation of scientists with digital literacy, showing that technology is a vital tool for engaging and efficient research.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How does the system improve collaboration among student research groups?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>The Stats Dashboard allows groups to see how their data contributes to the collective findings, encouraging comparison and deeper analysis.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What future improvements are planned for the platform?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>Future plans include AI-powered species identification, interactive GIS mapping within the app, and direct push notifications for field communication.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Could AI or GIS technologies be integrated into future versions of the system?</h3>
+                    <i class="fas fa-plus faq-toggle-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        <p>Yes. Integrating Google Maps API for spatial analysis and on-device AI for classification would turn EcoField Logger into a world-class professional research tool.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer>
+        <p class="copyright"> &copy;
+            EcoField Logger by <a href="/profile" style="color: white;"><strong>MiltonPixel</strong></a> — Department of Animal Biology and Conservation Science (UG)</p>
+    </footer>
+
+    <script>
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentElement;
+                item.classList.toggle('active');
+            });
+        });
+    </script>
+</body>
+</html>

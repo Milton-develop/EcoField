@@ -1,0 +1,90 @@
+<button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation">
+  <span class="hamburger-line"></span>
+  <span class="hamburger-line"></span>
+  <span class="hamburger-line"></span>
+</button>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="admin-sidebar" id="adminSidebar">
+  <div class="sidebar-brand">
+    <a href="/admin/logout" class="sidebar-brand-link">EcoField Logger</a>
+    <span class="sidebar-badge">ADMIN PORTAL</span>
+    <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">
+      <span class="close-line"></span>
+      <span class="close-line"></span>
+    </button>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/admin/dashboard" class="sidebar-link{% if active_sidebar == 'dashboard' %} active{% endif %}">Dashboard</a>
+    <a href="/manage_groups" class="sidebar-link{% if active_sidebar == 'manage' %} active{% endif %}">Manage</a>
+    <a href="/admin/view_groups" class="sidebar-link{% if active_sidebar == 'groups' %} active{% endif %}">Groups</a>
+    <a href="/add_species" class="sidebar-link{% if active_sidebar == 'species' %} active{% endif %}">Unlisted</a>
+    <a href="/admin/settings" class="sidebar-link{% if active_sidebar == 'settings' %} active{% endif %}">Settings</a>
+    <a href="/admin/archive" class="sidebar-link{% if active_sidebar == 'archive' %} active{% endif %}">Archive</a>
+    <a href="/admin/reports" class="sidebar-link{% if active_sidebar == 'reports' %} active{% endif %}">Reports</a>
+    <a href="#" class="sidebar-link sidebar-darkmode" id="darkModeToggle">
+      <span id="darkModeIcon"></span> <span id="darkModeLabel">Dark Mode</span>
+    </a>
+    <a href="/admin/logout" class="sidebar-link sidebar-logout">Logout</a>
+  </nav>
+</aside>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var toggle = document.getElementById('sidebarToggle');
+    var close = document.getElementById('sidebarClose');
+    var sidebar = document.getElementById('adminSidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      overlay.classList.add('open');
+      toggle.style.display = 'none';
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+      toggle.style.display = '';
+    }
+
+    if (toggle && close && sidebar && overlay) {
+      toggle.addEventListener('click', openSidebar);
+      close.addEventListener('click', closeSidebar);
+      overlay.addEventListener('click', closeSidebar);
+    }
+
+    // ── DARK MODE ────────────────────────────────────────────
+    var darkToggle = document.getElementById('darkModeToggle');
+    var darkIcon = document.getElementById('darkModeIcon');
+    var darkLabel = document.getElementById('darkModeLabel');
+    var htmlEl = document.documentElement;
+
+    function setDarkMode(enabled) {
+      if (enabled) {
+        htmlEl.classList.add('dark-mode');
+        if (darkIcon) darkIcon.textContent = '';
+        if (darkLabel) darkLabel.textContent = 'Light Mode';
+        localStorage.setItem('ecofield-dark-mode', '1');
+      } else {
+        htmlEl.classList.remove('dark-mode');
+        if (darkIcon) darkIcon.textContent = '';
+        if (darkLabel) darkLabel.textContent = 'Dark Mode';
+        localStorage.setItem('ecofield-dark-mode', '0');
+      }
+    }
+
+    // Load saved preference
+    if (localStorage.getItem('ecofield-dark-mode') === '1') {
+      setDarkMode(true);
+    }
+
+    if (darkToggle) {
+      darkToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        setDarkMode(!htmlEl.classList.contains('dark-mode'));
+      });
+    }
+  });
+</script>

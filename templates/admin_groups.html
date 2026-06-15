@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_groups.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/group.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" type="image/png" href="/static/images/icon-192x192.png">
+  <title>Admin - View Groups</title>
+  <style>
+    .group-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    .group-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      background: #f1f8f3;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .group-card-header .group-id {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #1b5e20;
+    }
+    .group-card-header .group-pw {
+      color: #666;
+      font-size: 0.85rem;
+      font-family: monospace;
+    }
+    .group-students {
+      padding: 0.75rem 1.5rem;
+    }
+    .group-students h4 {
+      margin: 0 0 0.5rem;
+      color: #333;
+      font-size: 0.9rem;
+    }
+    .group-students table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .group-students th {
+      text-align: left;
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid #ddd;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .search-bar {
+      max-width: 400px;
+      margin: 0 0 1.5rem;
+      padding: 0;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 2px solid #2e7d32;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+
+    .search-bar input:focus {
+      border-color: #2e7d32;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #999;
+      font-size: 1.05rem;
+      display: none;
+    }
+
+    .group-card.hidden-by-search {
+      display: none;
+    }
+    .group-students td {
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .group-students .no-students {
+      color: #999;
+      font-style: italic;
+      padding: 0.5rem 0;
+    }
+    .delete-btn {
+      background: #e53935;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .delete-btn:hover {
+      background: #c62828;
+    }
+    .edit-pw-btn {
+      background: #2e7d32;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .edit-pw-btn:hover {
+      background: #1b5e20;
+    }
+    .pw-edit-inline {
+      display: none;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .pw-edit-inline.active {
+      display: flex;
+    }
+    .pw-edit-inline input {
+      padding: 0.3rem 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: monospace;
+    }
+    .pw-edit-inline .admin-pw-input {
+      width: 100px;
+    }
+    .pw-edit-inline .pw-input {
+      width: 130px;
+    }
+    .pw-save-inline {
+      background: #2e7d32;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .pw-save-inline:disabled {
+      background: #a5d6a7;
+      cursor: default;
+    }
+    .pw-cancel-inline {
+      background: #757575;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .pw-status-inline {
+      font-size: 0.8rem;
+    }
+    .pw-status-inline.saved {
+      color: #2e7d32;
+    }
+    .pw-status-inline.error {
+      color: #e53935;
+    }
+    .pw-static {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .download-all-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border: 2px solid #2e7d32;
+      border-radius: 6px;
+      background: white;
+      color: #2e7d32;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+      margin-bottom: 1rem;
+    }
+    .download-all-btn:hover {
+      background: #e8f5e9;
+    }
+
+    @media (max-width: 768px) {
+      .search-bar {
+        max-width: none;
+        width: 100%;
+        margin-bottom: 1rem;
+      }
+
+      .group-card {
+        border-radius: 8px;
+      }
+
+      .group-card-header {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        align-items: stretch;
+        padding: 0.9rem;
+      }
+
+      .group-card-header .group-id,
+      .group-card-header .group-pw {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .group-card-header form,
+      .group-card-header .delete-btn {
+        width: 100%;
+      }
+
+      .group-students {
+        padding: 0.75rem 0.9rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .group-students table {
+        min-width: 360px;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% set active_sidebar = 'groups' %}
+
+  <div class="admin-layout">
+    {% include '_admin_sidebar.html' %}
+
+    <div class="admin-content">
+      <div class="head">
+        <h1 class="text">Registered Groups</h1>
+        <p>View all added groups and their students.</p>
+      </div>
+
+      <main>
+        <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center; margin-bottom:1rem;">
+          <div class="search-bar" style="margin:0; flex:1; min-width:200px;">
+            <input type="text" id="studentSearch" placeholder="Search by Group ID, Student ID or Student Name..." oninput="filterGroups()">
+          </div>
+          <button type="button" class="download-all-btn" onclick="downloadAllGroupsCSV()">Download All Groups CSV</button>
+        </div>
+
+        <div id="noResults" class="no-results">No id, group or student matches your search.</div>
+
+        <script id="groupsData" type="application/json">{{ groups_json|safe }}</script>
+
+        {% if groups %}
+          {% for group in groups %}
+          <div class="group-card">
+            <div class="group-card-header">
+              <span class="group-id">{{ group.group_id }}</span>
+              <span class="pw-static" id="pw-static-{{ loop.index }}">
+                <span class="group-pw">Password: {{ group.password }}</span>
+                <button type="button" class="edit-pw-btn" onclick="editPassword({{ loop.index }}, '{{ group.group_id }}')">Edit</button>
+              </span>
+              <span class="pw-edit-inline" id="pw-edit-{{ loop.index }}">
+                <input type="text" class="pw-input" value="{{ group.password }}" data-original="{{ group.password }}">
+                <input type="password" class="admin-pw-input" placeholder="Admin PW">
+                <button type="button" class="pw-save-inline" onclick="savePassword({{ loop.index }}, '{{ group.group_id }}')">Save</button>
+                <button type="button" class="pw-cancel-inline" onclick="cancelEdit({{ loop.index }})">Cancel</button>
+                <span class="pw-status-inline" id="pw-status-{{ loop.index }}"></span>
+              </span>
+              <form action="{{ url_for('delete_group', group_id=group.group_id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this group and all its students?');" style="margin: 0;">
+                <button type="submit" class="delete-btn">Delete</button>
+              </form>
+            </div>
+            <div class="group-students">
+              <h4>Students ({{ group.students|length }})</h4>
+              {% if group.students %}
+              <table>
+                <thead>
+                  <tr>
+                    <th>Student ID</th>
+                    <th>Student Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for s in group.students %}
+                  <tr>
+                    <td>{{ s.student_id }}</td>
+                    <td>{{ s.student_name }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% else %}
+              <div class="no-students">No students registered.</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="text-align:center; padding:2rem; font-size: 1.1rem;">No groups found.</p>
+        {% endif %}
+      </main>
+    </div>
+  </div>
+
+<script>
+function filterGroups() {
+  var input = document.getElementById('studentSearch');
+  var filter = input.value.toLowerCase().trim();
+  var cards = document.querySelectorAll('.group-card');
+  var noResults = document.getElementById('noResults');
+  var visibleCount = 0;
+
+  cards.forEach(function(card) {
+    var text = card.textContent.toLowerCase();
+    if (!filter || text.indexOf(filter) !== -1) {
+      card.classList.remove('hidden-by-search');
+      visibleCount++;
+    } else {
+      card.classList.add('hidden-by-search');
+    }
+  });
+
+  noResults.style.display = (visibleCount === 0) ? 'block' : 'none';
+}
+
+function editPassword(index, groupId) {
+  document.getElementById('pw-static-' + index).style.display = 'none';
+  document.getElementById('pw-edit-' + index).classList.add('active');
+}
+
+function cancelEdit(index) {
+  var editDiv = document.getElementById('pw-edit-' + index);
+  editDiv.classList.remove('active');
+  editDiv.querySelector('.pw-input').value = editDiv.querySelector('.pw-input').getAttribute('data-original');
+  editDiv.querySelector('.admin-pw-input').value = '';
+  document.getElementById('pw-status-' + index).textContent = '';
+  document.getElementById('pw-static-' + index).style.display = '';
+}
+
+function savePassword(index, groupId) {
+  var editDiv = document.getElementById('pw-edit-' + index);
+  var newPw = editDiv.querySelector('.pw-input').value.trim();
+  var adminPw = editDiv.querySelector('.admin-pw-input').value.trim();
+  var status = document.getElementById('pw-status-' + index);
+
+  if (!newPw || newPw.length < 4) {
+    status.className = 'pw-status-inline error';
+    status.textContent = 'Min 4 chars';
+    return;
+  }
+  if (!adminPw) {
+    status.className = 'pw-status-inline error';
+    status.textContent = 'Enter admin PW';
+    return;
+  }
+
+  var btn = editDiv.querySelector('.pw-save-inline');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  status.className = 'pw-status-inline';
+  status.textContent = '';
+
+  var fd = new FormData();
+  fd.append('admin_password', adminPw);
+  fd.append('group_id', groupId);
+  fd.append('new_password', newPw);
+
+  fetch('/manage_groups/update-password', { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        status.className = 'pw-status-inline saved';
+        status.textContent = 'Saved';
+        editDiv.querySelector('.pw-input').setAttribute('data-original', newPw);
+        editDiv.querySelector('.pw-input').value = newPw;
+        // Update the static display
+        var staticSpan = document.getElementById('pw-static-' + index);
+        staticSpan.querySelector('.group-pw').textContent = 'Password: ' + newPw;
+        setTimeout(function() {
+          cancelEdit(index);
+        }, 800);
+      } else {
+        status.className = 'pw-status-inline error';
+        status.textContent = data.error || 'Error';
+      }
+    })
+    .catch(function() {
+      status.className = 'pw-status-inline error';
+      status.textContent = 'Network error';
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.textContent = 'Save';
+    });
+}
+
+function downloadAllGroupsCSV() {
+  var dataEl = document.getElementById('groupsData');
+  if (!dataEl) return;
+  var groups;
+  try {
+    groups = JSON.parse(dataEl.textContent);
+  } catch(e) { return; }
+
+  var rows = [['Group ID', 'Student ID', 'Student Name']];
+  groups.forEach(function(g) {
+    if (g.students && g.students.length) {
+      g.students.forEach(function(s) {
+        rows.push([g.group_id, s.student_id, s.student_name]);
+      });
+    } else {
+      rows.push([g.group_id, '', '']);
+    }
+  });
+
+  var csv = rows.map(function(r) {
+    return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(',');
+  }).join('\n');
+
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'all_groups.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" type="image/png" href="/static/images/icon-192x192.png">
+  <title>Report an Issue — EcoField Logger</title>
+  <style>
+    .report-container {
+      max-width: 640px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      border: 2px solid #2e7d32;
+    }
+    .report-container h2 {
+      color: #1b5e20;
+      margin-top: 0;
+      margin-bottom: 0.25rem;
+    }
+    .report-container .subtitle {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+    .report-container label {
+      display: block;
+      font-weight: 500;
+      margin: 0.75rem 0 0.25rem;
+      color: #333;
+    }
+    .report-container input,
+    .report-container select,
+    .report-container textarea {
+      width: 100%;
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .report-container textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    .report-container .btn {
+      background-color: #2e7d32;
+      color: white;
+      padding: 0.7rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 1rem;
+      display: inline-block;
+      text-decoration: none;
+    }
+    .report-container .btn:hover {
+      background-color: #226d26;
+    }
+    .report-container .btn-secondary {
+      background-color: red;
+      margin-left: 0.5rem;
+    }
+    .report-container .btn-secondary:hover {
+      background-color: red;
+    }
+    .form-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .required::after {
+      content: " *";
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">EcoField Logger</a>
+      {% if session.get('user_role') == 'student' %}
+      <h2 class="user">STUDENT USER</h2>
+      {% endif %}
+      {% if session.get('user_role') == 'admin' %}
+      <h2 class="user">ADMIN USER</h2>
+      {% endif %}
+      <div class="nav-links">
+        <a href="/home">Home</a>
+        <a href="/form">Log</a>
+        <a href="/help">Help</a>
+        <a href="/faq">FAQ</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="report-container">
+    <h2>Report An Issue</h2>
+    <p class="subtitle">Help us improve EcoField Logger. Describe the problem you encountered.</p>
+
+    {% if error %}
+      <div style="background:#f8d7da; color:#721c24; padding:10px; margin-bottom:15px; border-radius:5px; border:1px solid #f5c6cb;">
+        <strong>Error:</strong> {{ error }}
+      </div>
+    {% endif %}
+
+    {% if success %}
+      <div style="background:#d4edda; color:#155724; padding:10px; margin-bottom:15px; border-radius:5px; border:1px solid #c3e6cb;">
+        <strong>Success!</strong> {{ success }}
+      </div>
+    {% else %}
+
+    <form method="POST" action="/report">
+      <label class="required">Your Name</label>
+      <input type="text" name="reporter_name" required placeholder="e.g. John Doe">
+
+      <label>Student ID</label>
+      <input type="text" name="student_id" placeholder="e.g. 11001111">
+
+      <p>Group ID <span style='color: red;'>*</span></p>
+      <div id="group-alert" style="display:none; background:#f8d7da; color:#721c24; padding:8px 12px; margin-bottom:10px; border-radius:5px; border:1px solid #f5c6cb; font-size:14px;">
+        ⚠️ This group does not exist in the system.
+      </div>
+      <select name="group_id" id="group_id" title="group_id">
+        <option value="">-- Select your group id --</option>
+        <option value="Group 1">Group 1</option>
+        <option value="Group 2">Group 2</option>
+        <option value="Group 3">Group 3</option>
+        <option value="Group 4">Group 4</option>
+        <option value="Group 5">Group 5</option>
+        <option value="Group 6">Group 6</option>
+        <option value="Group 7">Group 7</option>
+        <option value="Group 8">Group 8</option>
+        <option value="Group 9">Group 9</option>
+        <option value="Group 10">Group 10</option>
+        <option value="Group 11">Group 11</option>
+        <option value="Group 12">Group 12</option>
+        <option value="Group 13">Group 13</option>
+        <option value="Group 14">Group 14</option>
+        <option value="Group 15">Group 15</option>
+      </select>
+
+      <label class="required">Category</label>
+      <select name="category" required>
+        <option value="">-- Select a category --</option>
+        <option value="Bug">Bug / Glitch</option>
+        <option value="GPS">GPS Issue</option>
+        <option value="Photos">Photo / Upload Issue</option>
+        <option value="Offline">Offline / Sync Issue</option>
+        <option value="Login">Login / Group Access Issue</option>
+        <option value="Form">Form / Submission Issue</option>
+        <option value="Suggestion">Suggestion / Feature Request</option>
+        <option value="Other">Other</option>
+      </select>
+
+      <label class="required">Subject</label>
+      <input type="text" name="subject" required placeholder="Brief summary of the issue" maxlength="200">
+
+      <label class="required">Description</label>
+      <textarea name="description" required placeholder="Describe what happened in detail."></textarea>
+
+      <div class="form-actions">
+        <button type="submit" class="btn">Submit Report</button>
+        <a href="/help" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+
+    {% endif %}
+  </div>
+
+  <script>
+    // ── GROUP ID VALIDATION ─────────────────────────────────────────
+const groupSelect = document.getElementById('group_id');
+const groupAlert = document.getElementById('group-alert');
+let groupCheckTimeout = null;
+
+groupSelect.addEventListener('change', function() {
+  const val = this.value.trim();
+  if (!val) {
+    groupAlert.style.display = 'none';
+    return;
+  }
+
+  clearTimeout(groupCheckTimeout);
+  groupCheckTimeout = setTimeout(() => {
+    fetch('/check-group/' + encodeURIComponent(val))
+      .then(res => res.json())
+      .then(data => {
+        groupAlert.style.display = data.exists ? 'none' : 'block';
+      })
+      .catch(() => {
+        groupAlert.style.display = 'none';
+      });
+  }, 100);
+});
+  </script>
+</body>
+</html>

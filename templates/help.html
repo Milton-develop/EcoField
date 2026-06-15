@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/help.css') }}">
+   <link rel="icon" type="image/png" href="/static/images/icon-192x192.png">
+  <title>EcoField Logger – Help</title>
+</head>
+<body>
+
+  <!-- ===== NAVIGATION ===== -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-brand">EcoField Logger</a>
+      {%if session.get('user_role')=='student'%}
+      <h2 class="user">STUDENT USER</h2>
+      {%endif%}
+       {%if session.get('user_role')=='admin'%}
+      <h2 class="user">ADMIN USER</h2>
+      {%endif%}
+      <div class="nav-links">
+        {% if session.get('user_role')=='student'%}
+        <a href="/logout" class="btn-logout">Home</a>
+        {%endif%}
+        {% if session.get('user_role')=='admin'%}
+        <a href="/admin/logout" class="btn-logout">Home</a>
+        {%endif%}
+         <a href="/help" class="active">Help</a>
+        <a href="/faq">FAQ</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== HEADER ===== -->
+  <div class="header">
+    <h2 class="text">Fieldwork Instructions &amp; User Guide</h2>
+  </div>
+
+  <!-- ===== HELP CONTENT ===== -->
+  <main class="help-container">
+     <div class='report'>
+      Found a bug or encountered a problem? Click the link to submit a report. Your feedback helps us improve EcoField Logger. Take the survey after field work to help us better access the 
+      use of the web app and how we can improve it. <a href='/report'>Report An Issue</a><a href='https://docs.google.com/forms/d/e/1FAIpQLScw-FvFO4bun1aEA6eEyC_wRI90hrOfhOSjTUPeu8NBZu7pQg/viewform?usp=publish-editor' target="_blank">EcoField Survey</a>
+     </div>
+    <section>
+      <h2>1. Using the 5‑Step Logger</h2>
+      <ul>
+        <li>
+          <strong>Step 1 – Researcher Information</strong>
+          <ul>
+            <li>Enter your <strong>Year Group</strong> (e.g. 2025/26).</li>
+            <li>Enter your correct <strong>Group ID</strong> exactly as provided by your lecturer.</li>
+            <li>Enter your <strong>Name</strong> as it appears on the class register.</li>
+            <li>Enter your <strong>STUDENT ID</strong> as issued to you by the University </li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>Step 2 – Location, GPS &amp; Photos</strong>
+          <ul>
+            <li>Provide a short <strong>Location Description</strong> (e.g. “Near large river bank, south transect”).</li>
+            <li>Select the <strong>Survey Type</strong> (Water, Habitat, or Biodiversity) that best matches your activity.</li>
+            <li>Click <strong>📍 Get Current Coordinates</strong> to autofill <em>Latitude</em> and <em>Longitude</em>.</li>
+            <li>Allow your browser to use <strong>Location Services</strong>.</li>
+            <li>Upload or take <strong>Field Photos</strong> of the site and/or species. Thumbnails will appear in the preview grid.</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>Step 3 – Species &amp; Survey Type</strong>
+          <ul>
+            <li>Enter the <strong>Location</strong> name.</li>
+            <li>Select the <strong>Species</strong> name from the data provided </li>
+            <li>Record the <strong>Number</strong> of individuals observed.</li>
+            <li>In the case of a <strong>New Species</strong> tick the checkbox to provide a new section for your new entry and record </li>
+            <li>Select the primary <strong>Habitat</strong> of the species (Grassland, Forest, Rocky, Other).</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>Step 4 – Microhabitat: Physical Conditions</strong>
+          <ul>
+            <li><strong>Temperature (°C)</strong></li>
+            <li><strong>Humidity (%)</strong></li>
+            <li><strong>Rainfall (mm)</strong> – if measured during your survey period.</li>
+            <li><strong>Wind Speed (m/s)</strong></li>
+            <li><strong>Wind Direction (°)</strong> – in degrees from North if available.</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>Step 5 – Microhabitat: Light &amp; Vegetation</strong>
+          <ul>
+            <li><strong>Light Intensity (lx)</strong></li>
+            <li><strong>Canopy Cover (%)</strong> – estimated percentage of sky covered by vegetation.</li>
+            <li><strong>Canopy Height (m)</strong></li>
+            <li>Use the <strong>Notes</strong> box for extra observations (e.g. behaviour, disturbances, unusual weather, sampling method).</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>Step Navigation</strong>
+          <ul>
+            <li>Use the numbered circles <strong>1–5</strong> at the top of the form or the <strong>Next</strong>/<strong>Previous</strong> buttons to move between steps.</li>
+            <li>Review all entries before clicking <strong>Submit</strong> on Step 5.</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>2. Measurement Units Reference</h2>
+      <p>To keep the dataset consistent across all groups, these units will be used for every measurement:</p>
+      <table>
+        <tr style="background-color: #f2f2f2;">
+          <th>Variable</th>
+          <th>Required Unit</th>
+        </tr>
+        <tr><td>Temperature</td><td>Degrees Celsius (°C)</td></tr>
+        <tr><td>Humidity</td><td>Percentage (%)</td></tr>
+        <tr><td>Rainfall</td><td>Millimeters (mm)</td></tr>
+        <tr><td>Wind Speed</td><td>Meters per second (m/s)</td></tr>
+        <tr><td>Wind Direction</td><td>Degrees (°)</td></tr>
+        <tr><td>Light Intensity</td><td>Lux (lx)</td></tr>
+        <tr><td>Canopy Cover</td><td>Percentage (%)</td></tr>
+        <tr><td>Canopy Height</td><td>Meters (m)</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>3. Viewing &amp; Downloading Data</h2>
+      <ul>
+        <li>Go to the <strong>Data</strong> page and log in with your <strong>Group ID</strong> and <strong>Group Password</strong>.</li>
+        <li><strong>Image viewing:</strong> Click on photo thumbnails in the table to open full‑size or download field images.</li>
+        <li><strong>Export:</strong> Use <strong>Download CSV</strong> to export the visible dataset for analysis and your final report.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Troubleshooting GPS, Uploads &amp; Forms</h2>
+      <ul>
+        <li>
+          <strong>GPS issues:</strong>
+          <ul>
+            <li>Ensure <strong>Location Services</strong> are enabled on your phone/tablet and for your browser.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Upload issues:</strong>
+          <ul>
+            <li>If the page is slow or “not responding” after submission, reduce the number of images or choose smaller files.</li>
+            <li>Check that your internet connection is stable before submitting.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Form navigation:</strong>
+          <ul>
+            <li>Use <strong>Previous</strong> and <strong>Next</strong> to review earlier steps without losing data.</li>
+            <li>If an error occurs, copy long text from the <strong>Notes</strong> field before refreshing the page.</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>5. Dashboard &amp; Analysis</h2>
+      <ul>
+        <li>The <strong>EcoField Stats Dashboard</strong> summarises data in real time based on your submissions.</li>
+        <li>It includes metrics such as <strong>Simpson’s Diversity Index</strong> calculated from your <em>Species</em> and <em>Count</em> inputs.</li>
+        <li>Use the dashboard to compare your group’s findings with the overall class and to support the data analysis section of your report.</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <p class="copyright"> &copy;
+        EcoField Logger by <a href="/profile" style="color: inherit; font-weight: bold; text-decoration: underline;">MiltonPixel</a> — Department of Animal Biology and Conservation Science (UG)</p>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="/static/images/icon-192x192.png">
+    <title>Form &bull; EcoField Logger</title>
+</head>
+<body>
+
+     <nav class="navbar">
+    <div class="nav-container">
+      <a href="/form" class="nav-brand">EcoField Logger</a>
+       {%if session.get('user_role')=='student'%}
+      <h2 class="user">STUDENT USER</h2>
+      {%endif%}
+       {%if session.get('user_role')=='admin'%}
+      <h2 class="user">ADMIN USER</h2>
+      {%endif%}
+      <div class="nav-links">
+        {% if session.get('user_role')=='student'%}
+        <a href="/home">Home</a>
+        {%endif%}
+        {%if session.get('user_role')=='admin'%}
+        <a href="/admin/logout">Home</a>
+        {%endif%}
+        <a href="/form" class="active">Log</a>
+        <a href="/group">Data</a>
+        {% include '_notification_bell.html' %}
+      </div>
+    </div>
+  </nav>
+    <main>
+      
+      <p class="table-legend">
+      <strong style="color: red;">Note:</strong> 
+      Header tags marked with a <strong style='color:red;'>Red</strong> background indicate that field is important before data will
+      be submitted or accepted. If marked with <strong style="color: #2e7d32">Green</strong> it indicates that field has some exceptions and 
+      some entries can be skipped if the researcher does not have those entries
+     </p>
+
+     <form action="" method="POST" class="form-container" id="form" enctype="multipart/form-data" onsubmit="return confirm('Are you sure you want to submit this data? NOTE: It can not be edited after submission?');">
+
+       <h2>Data Collection Form</h2>
+       {% if error %}
+         <div style="background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #f5c6cb;">
+           <strong>Wait!</strong> {{ error }}
+         </div>
+       {% endif %}
+       {% if success %}
+         <div style="background-color: #d4edda; color: #155724; padding: 10px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #c3e6cb;">
+           <strong>Success!</strong> Data has been submitted successfully.
+         </div>
+       {% endif %}
+       <div class="stepper-navigation">
+         <p>
+            <a href="#" class="step-one active" data-step="1">1</a>
+         <span class="step-label">Metadata</span>
+         </p>
+        <p>
+            <a href="#" class="step-one" data-step="2">2</a>
+            <span class="step-label">Location</span>
+        </p>
+       <p>
+         <a href="#" class="step-one" data-step="3">3</a>
+         <span class="step-label">Species</span>
+       </p>
+        <p>
+            <a href="#" class="step-one" data-step="4">4</a>
+            <span class="step-label">Records</span>
+        </p>
+       <p>
+         <a href="#" class="step-one" data-step="5">5</a>
+         <span class="step-label">Records</span>
+       </p>
+       </div>
+      
+      <div class="first-page active" id="step-1">
+        <h3 style="background-color: red; color: white; border: none;">Researcher Information</h3>
+
+        <p>Year Group <span style='color: red;'>*</span></p>
+        <select name="year_group" id="year_group" title="year_group">
+          <option value="">-- Select your year group --</option>
+          <option value="{{ year }}">{{ year }}</option>
+        </select>
+
+        <br>
+
+      <p>Group ID <span style='color: red;'>*</span></p>
+      <div id="group-alert" style="display:none; background:#f8d7da; color:#721c24; padding:8px 12px; margin-bottom:10px; border-radius:5px; border:1px solid #f5c6cb; font-size:14px;">
+        ⚠️ This group does not exist in the system.
+      </div>
+      <select name="group_id" id="group_id" title="group_id">
+        <option value="">-- Select your group id --</option>
+        <option value="Group 1">Group 1</option>
+        <option value="Group 2">Group 2</option>
+        <option value="Group 3">Group 3</option>
+        <option value="Group 4">Group 4</option>
+        <option value="Group 5">Group 5</option>
+        <option value="Group 6">Group 6</option>
+        <option value="Group 7">Group 7</option>
+        <option value="Group 8">Group 8</option>
+        <option value="Group 9">Group 9</option>
+        <option value="Group 10">Group 10</option>
+        <option value="Group 11">Group 11</option>
+        <option value="Group 12">Group 12</option>
+        <option value="Group 13">Group 13</option>
+        <option value="Group 14">Group 14</option>
+        <option value="Group 15">Group 15</option>
+      </select>
+
+      <br>
+
+      <label for="member_name">Your Name <span style='color: red;'>*</span></label>
+      <br>
+      <input type="text" name="member_name" id="member_name" placeholder="Enter Your Name" class="input" required>
+      <br>
+
+      <label for="student_id">Student ID <span style='color: red;'>*</span></label>
+      <br>
+      <input type="text" name="student_id" id="student_id" placeholder="Enter Your Student ID" class="input" required>
+      <br>
+
+      <button class="next-btn" type="button" data-next-step="2">Next &rarr;</button>
+
+      </div>
+
+     <div id="step-2" class="first-page hidden">
+      <h3>Species & Site Details</h3>
+       <!-- TEXT LOCATION (Description) -->
+      <label for="location">Location Description <span style='color: red;'>*</span></label>
+      <input type="text" name="location" id="location" placeholder="e.g. Near the large river bank" class="input" required>
+       <br>
+
+      <p>Survey type <span style='color: red;'>*</span></p>
+      <select name="survey_type" id="survey" title="survey">
+        <option value="">-- Select your survey type --</option>
+        <option value="Water">Water</option>
+        <option value="Habitat">Habitat</option>
+        <option value="Biodiversity">Biodiversity</option>
+        <option value="Parasitology & Public Health">Parasitology & Public Health</option>
+        <option value="Small Mammals">Small Mammals</option>
+        <option value="Large Mammals">Large Mammmals</option>
+        <option value="Entomology">Entomology</option>
+        <option value="Avifauna">Avifauna</option>
+        <option value="Herpetofauna">Herpetofauna</option>
+      </select>
+<br>      
+
+<label for="location">Habitat type <span style='color: red;'>*</span></label>
+      <input list="habitat" id="site_habitat" name="habitat" title="habitat" placeholder="Describe the habitat">
+      <datalist id="habitat">
+        <option value="Open Grassland">
+        <option value="Wooded Grassland">
+        <option value="Grassland">
+        <option value="Thicket">
+        <option value="Forest">
+        <option value="Rocky">
+        <option value="Wetland">
+        <option value="Other">
+      </datalist>
+      <br>
+
+      <!-- IMAGE UPLOAD SECTION -->
+    <label for="imageInput">Field Photos</label>
+<div class="upload-controls">
+    <input type="file" name="photos" id="imageInput" accept="image/*" multiple class="input">
+    
+    <p class="option">- OR -</p>
+    
+    <label for="camera" class="gps-btn">📸 Take Live Photo</label>
+    <input type="file" name="photos" id="camera" accept="image/*" capture="environment" multiple class="input">
+
+    <!-- <p class="option">- OR -</p>
+
+    <label for="video-camera" class="gps-btn">🎥 Record Live Video</label>
+<input type="file" name="field-video" id="video-camera" accept="video/*" capture="environment" class="input"> -->
+</div>
+
+<div id="preview-container"></div>
+
+      <button type="button" class="prev-btn" data-prev-step="1">&larr; Previous</button>
+      <button type="button" class="next-btn" data-next-step="3">Next &rarr;</button>
+     </div>
+
+     <div id="step-3" class="first-page hidden">
+       <h3>Species & Site Details</h3>
+
+       <!-- GPS SECTION -->
+      <label>GPS Coordinates <span style='color: red;'>*</span></label>
+      <br>
+      <button type="button" class="gps-btn" onclick="getGPS()">📍 Get Current Coordinates</button>
+      <p id="gps-status"></p>
+      
+      <div class="bearing">
+          <input type="text" name="latitude" id="latitude" class="input gps-input" placeholder="Latitude" readonly required>
+          <input type="text" name="longitude" id="longitude" class="input gps-input" placeholder="Longitude" readonly required>
+      </div>
+
+
+          <p>Location <span style='color: red;'>*</span></p>
+    <!-- Site Location -->
+<!-- Site Location -->
+<select name="site_location" id="site_location" title="site_location" onchange="toggleSpeciesSection()" required>
+  <option value="">-- Select your site location --</option>
+  <option value="Shai Hills">Shai Hills</option>
+  <option value="University of Ghana">University of Ghana</option>
+  <option value="Achimota Forest">Achimota Forest</option>
+  <option value="Other">Other</option>
+</select>
+<br>
+
+<div id="species-section" style="display: none;">
+
+  <h4>Species Entries</h4>
+
+  <div id="species-container">
+    <div class="species-block">
+      <label>Species</label>
+      <br>
+      <select class="input species-dropdown" id="species" title="species">
+        <option value="">-- Select Location & Survey Type First --</option>
+      </select>
+      <br>
+      <label>Number</label>
+      <input type="number" class="input" id="count" placeholder="Enter Number of Species">
+      <br>
+      <label>Survey Method</label>
+      <br>
+      <select class="input" id="species_method" title="species_method">
+        <option value="">-- Select Survey Method --</option>
+      </select>
+      <br>
+    </div>
+  </div>
+
+  <button type="button" onclick="addSpecies()">+ Add Species</button>
+
+  <!-- Collected Species Entries Display -->
+  <div id="species-saved-entries" style="margin-top: 15px;"></div>
+
+  <br><br>
+
+  <div class="checkbox-group">
+    <input type="checkbox" id="new_species_checkbox" title="new_species" onchange="toggleNewSpecies()">
+    <label for="new_species_checkbox">New Species</label>
+  </div>
+  <br>
+
+  <!-- New Species Section (Hidden by Default) -->
+  <div id="new-species-section" style="display: none;">
+    <h4>Add New Species</h4>
+
+    <div id="new-species-container">
+      <div class="new-species-block">
+        <label>Species Name</label>
+        <br>
+        <input type="text" class="input" id="new_species" placeholder="Enter new species name">
+        <br>
+        <label>Number</label>
+        <br>
+        <input type="number" class="input" id="new_count" placeholder="Enter number observed">
+        <br>
+        <label>Survey Method</label>
+        <br>
+        <select class="input" id="new_species_method" title="new_species_method">
+          <option value="">-- Select Survey Method --</option>
+        </select>
+        <br>
+      </div>
+    </div>
+
+    <button type="button" onclick="addNewSpecies()">+ Add New Species</button>
+
+    <!-- Collected New Species Entries Display -->
+    <div id="new-species-saved-entries" style="margin-top: 15px;"></div>
+  </div>
+</div>
+
+<br>
+
+      <button type="button" class="prev-btn" data-prev-step="2">&larr; Previous</button>
+      <button type="button" class="next-btn" data-next-step="4">Next &rarr;</button>
+</div>
+ <br>
+ 
+</div>
+
+      <div id="step-4" class="first-page hidden">
+        <h3>Microhabitat Variables</h3>
+      <label for="temperature">Temperature (&deg;C)</label>
+      <br>
+      <input type="number" name="temperature" id="temperature" placeholder="Enter Temperature Recording" class="input" step="any">
+      <br>
+      <label for="humidity">Humidity (%)</label>
+      <br>
+      <input type="number" name="humidity" id="humidity" placeholder="Enter Humidity Recording" class="input" step="any">
+      <br>
+      <label for="rainfall">Rainfall (mm)</label>
+      <br>
+      <input type="number" name="rainfall" id="rainfall" placeholder="Enter Rainfall Recording" class="input" step="any">
+      <br>
+      <label for="wind speed">Wind Speed (m/s)</label>
+      <br>
+      <input type="number" name="wind_speed" id="wind_speed" placeholder="Enter Wind Speed Recording" class="input" step="any">
+      <br>
+
+      <label for="wind_direction">
+  Wind Direction: 
+  <span id="direction_val">0° (N)</span>
+</label>
+
+<input type="range" name="wind_direction" id="wind_direction"
+       min="0" max="360" step="1" value="0" class="input"
+       oninput="updateDirection(this.value)">
+<br>
+      <button type="button" class="prev-btn" data-prev-step="3">&larr; Previous</button>
+      <button type="button" class="next-btn" data-next-step="5">Next &rarr;</button>
+      </div>
+
+      <div id="step-5" class="first-page hidden">
+         <h3>Microhabitat Variables</h3>
+         <label for="light intensity">Light Intensity (lx)</label>
+         <br>
+      <input type="number" name="light_intensity" id="light_intensity" placeholder="Enter Light Intensity Recording" class="input" step="any">
+      <br>
+        <label for="canopy cover">Canopy Cover (%)</label>
+        <br>
+      <input type="number" name="canopy_cover" id="canopy_cover" placeholder="Enter Canopy Cover Recording" class="input" step="any">
+      <br>
+      <label for="canopy height">Canopy Height (m)</label>
+      <br>
+      <input type="number" name="canopy_height" id="canopy_height" placeholder="Enter Canopy Height Recording" class="input" step="any">
+      <br>
+       <label for="notes">Notes</label>
+       <br>
+      <textarea name="notes" id="notes" placeholder="Enter Your Notes" rows="5" cols="25"></textarea>
+      <br>
+      <button type="button" class="prev-btn" data-prev-step="4">&larr; Previous</button>
+      <button type="submit">Submit</button>
+      <button type="reset" class="btn1" onclick="clearPreviews()">Clear</button>
+      </div>
+    </form>
+  </main>
+
+
+  <script>
+const imageInput = document.getElementById('imageInput');
+const cameraInput = document.getElementById('camera');
+const videoInput = document.getElementById('video-camera');
+const previewContainer = document.getElementById('preview-container');
+
+function handleFiles(files) {
+    Array.from(files).forEach(file => {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '80px';
+            img.style.height = '80px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '5px';
+
+            wrapper.appendChild(img);
+            previewContainer.appendChild(wrapper);
+        }
+
+        reader.readAsDataURL(file);
+    });
+}
+
+imageInput.addEventListener('change', function () {
+    handleFiles(this.files);
+});
+
+cameraInput.addEventListener('change', function () {
+    handleFiles(this.files);
+});
+
+function getGPS() {
+    const status = document.getElementById("gps-status");
+    const lat = document.getElementById("latitude");
+    const lon = document.getElementById("longitude");
+
+    status.innerText = "Locating...";
+
+    if (!window.isSecureContext) {
+        status.innerText = "GPS requires HTTPS or localhost. Use the installed HTTPS app link for field devices.";
+        status.style.color = "red";
+        return;
+    }
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                lat.value = position.coords.latitude.toFixed(6);
+                lon.value = position.coords.longitude.toFixed(6);
+                status.innerText = "Coordinates Found! ✅";
+                status.style.color = "green";
+            },
+            (error) => {
+                status.innerText = "Error: " + error.message;
+                status.style.color = "red";
+            }
+        );
+    } else {
+        status.innerText = "Geolocation is not supported by this browser.";
+    }
+}
+
+function clearPreviews() {
+    previewContainer.innerHTML = '';
+    document.getElementById("gps-status").innerText = "";
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const stepNumbers = document.querySelectorAll('.step-one');
+    const formSections = document.querySelectorAll('.first-page');
+    const navButtons = document.querySelectorAll('.next-btn, .prev-btn');
+
+    function showStep(stepToShow) {
+        formSections.forEach(section => {
+            section.classList.add('hidden');
+            section.classList.remove('active');
+        });
+        stepNumbers.forEach(step => {
+            step.classList.remove('active');
+        });
+
+        const targetSection = document.getElementById(`step-${stepToShow}`);
+        if (targetSection) {
+            targetSection.classList.remove('hidden');
+            targetSection.classList.add('active');
+        }
+
+        const targetStepNumber = document.querySelector(`.step-one[data-step="${stepToShow}"]`);
+        if (targetStepNumber) {
+            targetStepNumber.classList.add('active');
+        }
+    }
+
+    stepNumbers.forEach(step => {
+        step.addEventListener('click', (e) => {
+            e.preventDefault();
+            const stepToShow = e.currentTarget.getAttribute('data-step');
+            showStep(stepToShow);
+        });
+    });
+
+    navButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const nextStep = e.currentTarget.getAttribute('data-next-step');
+            const prevStep = e.currentTarget.getAttribute('data-prev-step');
+
+            if (nextStep) {
+                showStep(nextStep);
+            } else if (prevStep) {
+                showStep(prevStep);
+            }
+        });
+    });
+});
+
+// ── GROUP ID VALIDATION ─────────────────────────────────────────
+const groupSelect = document.getElementById('group_id');
+const groupAlert = document.getElementById('group-alert');
+let groupCheckTimeout = null;
+
+groupSelect.addEventListener('change', function() {
+  const val = this.value.trim();
+  if (!val) {
+    groupAlert.style.display = 'none';
+    return;
+  }
+
+  clearTimeout(groupCheckTimeout);
+  groupCheckTimeout = setTimeout(() => {
+    fetch('/check-group/' + encodeURIComponent(val))
+      .then(res => res.json())
+      .then(data => {
+        groupAlert.style.display = data.exists ? 'none' : 'block';
+      })
+      .catch(() => {
+        groupAlert.style.display = 'none';
+      });
+  }, 100);
+});
+
+let ecoData = {};
+
+fetch('/static/data.json')
+    .then(response => response.json())
+    .then(data => {
+        ecoData = data;
+    });
+
+function updateSpeciesOptions(targetSelect = null) {
+    const location = document.getElementById('site_location').value;
+    const survey = document.getElementById('survey').value;
+
+    const dropdowns = targetSelect
+        ? [targetSelect]
+        : document.querySelectorAll('.species-dropdown');
+
+    dropdowns.forEach(select => {
+        const previousValue = select.value;
+
+        select.innerHTML = '<option value="">-- Select Species --</option>';
+
+        if (ecoData[location] && ecoData[location][survey]) {
+            ecoData[location][survey].forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.scientific;
+                option.textContent = `${item.name} (${item.scientific})`;
+                select.appendChild(option);
+            });
+
+            const otherOption = document.createElement('option');
+            otherOption.value = "Other";
+            otherOption.textContent = "Other (New Species)";
+            select.appendChild(otherOption);
+
+            select.value = previousValue;
+        } else {
+            select.innerHTML = '<option value="">No data available for this selection</option>';
+        }
+    });
+
+    updateSurveyMethods();
+}
+
+function updateSurveyMethods() {
+    const location = document.getElementById('site_location').value;
+    const survey = document.getElementById('survey').value;
+    const methodSelectors = ['species_method', 'new_species_method'];
+
+    methodSelectors.forEach(id => {
+        const methodSelect = document.getElementById(id);
+        if (!methodSelect) return;
+
+        methodSelect.innerHTML = '<option value="">-- Select Survey Method --</option>';
+
+        if (ecoData[location] && ecoData[location].methods && ecoData[location].methods[survey]) {
+            ecoData[location].methods[survey].forEach(method => {
+                const option = document.createElement('option');
+                option.value = method;
+                option.textContent = method;
+                methodSelect.appendChild(option);
+            });
+        } else {
+            methodSelect.innerHTML = '<option value="">No methods available for this selection</option>';
+        }
+    });
+}
+
+document.getElementById('site_location')
+    .addEventListener('change', () => updateSpeciesOptions());
+
+document.getElementById('survey')
+    .addEventListener('change', () => updateSpeciesOptions());
+
+document.addEventListener('change', function (e) {
+    if (e.target.classList.contains('species-dropdown')) {
+        toggleNewSpecies(e.target);
+    }
+});
+
+function toggleSpeciesSection() {
+    const siteLocation = document.getElementById('site_location').value;
+    const speciesSection = document.getElementById('species-section');
+
+    if (siteLocation !== '') {
+        speciesSection.style.display = 'block';
+    } else {
+        speciesSection.style.display = 'none';
+
+        const newSpeciesCheckbox = document.getElementById('new_species_checkbox');
+        const newSpeciesSection = document.getElementById('new-species-section');
+        newSpeciesCheckbox.checked = false;
+        newSpeciesSection.style.display = 'none';
+
+        resetNewSpeciesContainer();
+    }
+}
+
+function toggleNewSpecies() {
+    const checkbox = document.getElementById('new_species_checkbox');
+    const newSpeciesSection = document.getElementById('new-species-section');
+
+    if (checkbox.checked) {
+        newSpeciesSection.style.display = 'block';
+    } else {
+        newSpeciesSection.style.display = 'none';
+        resetNewSpeciesContainer();
+    }
+}
+
+function removeBlock(button, blockClass) {
+    const block = button.closest('.' + blockClass);
+    if (block) {
+        block.remove();
+    }
+}
+
+function resetNewSpeciesContainer() {
+    const container = document.getElementById('new-species-container');
+    container.innerHTML = `
+        <div class="new-species-block">
+            <label>Species Name</label>
+            <br>
+            <input type="text" class="input" id="new_species" placeholder="Enter new species name">
+            <br>
+            <label>Number</label>
+            <br>
+            <input type="number" class="input" id="new_count" placeholder="Enter number observed">
+            <br>
+            <label>Survey Method</label>
+            <br>
+            <select class="input" id="new_species_method" title="new_species_method">
+              <option value="">-- Select Survey Method --</option>
+            </select>
+            <hr>
+        </div>
+    `;
+    updateSurveyMethods();
+}
+
+// ===== SINGLE addSpecies function - saves entry to collector div =====
+function addSpecies() {
+    const speciesSelect = document.getElementById('species');
+    const countInput = document.getElementById('count');
+    const methodSelect = document.getElementById('species_method');
+    const container = document.getElementById('species-saved-entries');
+
+    if (!speciesSelect || !countInput || !container) return;
+
+    const speciesText = speciesSelect.options[speciesSelect.selectedIndex].text;
+    const speciesValue = speciesSelect.value;
+    const countValue = countInput.value;
+    const methodValue = methodSelect ? methodSelect.value : '';
+
+    if (!speciesValue || speciesValue === '') {
+        alert('Please select a species before adding.');
+        return;
+    }
+    if (!countValue || countValue <= 0) {
+        alert('Please enter a valid number.');
+        return;
+    }
+    if (!methodValue) {
+        alert('Please select a survey method before adding.');
+        return;
+    }
+
+    const existingEntries =
+    document.querySelectorAll(
+        '#species-saved-entries .species-saved-entry'
+    );
+
+for (const entry of existingEntries) {
+
+    const existingSpecies =
+        entry.querySelector(
+            'input[name="species[]"]'
+        ).value;
+
+    if (existingSpecies === speciesValue) {
+
+        const countSpan =
+            entry.querySelector('.species-count');
+
+        const hiddenCount =
+            entry.querySelector(
+                'input[name="count[]"]'
+            );
+
+        const updatedCount =
+            Number(hiddenCount.value) +
+            Number(countValue);
+
+        countSpan.textContent =
+            updatedCount;
+
+        hiddenCount.value =
+            updatedCount;
+
+        speciesSelect.selectedIndex = 0;
+        countInput.value = '';
+        if (methodSelect) methodSelect.selectedIndex = 0;
+
+        alert(
+            'Species already exists. Count updated.'
+        );
+
+        return;
+    }
+}
+
+    const entryDiv = document.createElement('div');
+    entryDiv.className = 'species-saved-entry';
+    entryDiv.style.cssText = 'border: 1px solid #ccc; padding: 10px; margin-bottom: 8px; border-radius: 5px; background: #f9f9f9; display: flex; justify-content: space-between; align-items: center;';
+
+    entryDiv.innerHTML = `
+        <div>
+            <strong>Species:</strong> ${speciesText} <br> 
+            <strong>Method:</strong> ${methodValue} <br>
+            <strong>Number:</strong>
+            <span class="species-count">${countValue}</span>
+            <input type="hidden" name="species[]" value="${speciesValue}">
+            <input type="hidden" name="count[]" value="${countValue}">
+            <input type="hidden" name="method[]" value="${methodValue}">
+        </div>
+        <button type="button"
+        onclick="editCount(this)"
+        style="background:#3498db;color:white;border:none;padding:3px 10px;border-radius:3px;cursor:pointer;margin-right:3px">
+        Edit
+    </button>
+        <button type="button" style="background: #e74c3c; color: #fff; border: none; padding: 5px 5px; border-radius: 3px; cursor: pointer;" onclick="removeEntry(this)">Delete</button>
+    `;
+
+    entryDiv.dataset.speciesText = speciesText;
+
+    container.appendChild(entryDiv);
+
+    // Reset the ORIGINAL form fields only
+    speciesSelect.selectedIndex = 0;
+    countInput.value = '';
+    if (methodSelect) methodSelect.selectedIndex = 0;
+}
+
+function addNewSpecies() {
+    const newSpeciesInput = document.getElementById('new_species');
+    const newCountInput = document.getElementById('new_count');
+    const newMethodSelect = document.getElementById('new_species_method');
+    const savedList = document.getElementById('new-species-saved-entries');
+
+    if (!newSpeciesInput || !newCountInput || !savedList) {
+        console.error('New species elements not found:', {
+            new_species: newSpeciesInput,
+            new_count: newCountInput,
+            saved_list: savedList
+        });
+        return;
+    }
+
+    const newSpeciesName = newSpeciesInput.value.trim();
+    const newCountValue = newCountInput.value.trim();
+    const newMethodValue = newMethodSelect ? newMethodSelect.value : '';
+
+    if (!newSpeciesName || !newCountValue || parseInt(newCountValue) < 1) {
+        alert('Please enter new species name and valid count first');
+        return;
+    }
+    if (!newMethodValue) {
+        alert('Please select a survey method before adding.');
+        return;
+    }
+
+    const entryElement = document.createElement('div');
+    entryElement.className = 'new-species-saved-entry';
+    entryElement.style.cssText = 'border: 1px solid #ccc; padding: 10px; margin-bottom: 8px; border-radius: 5px; background: #f8fff8; display: flex; justify-content: space-between; align-items: center;';
+
+    entryElement.innerHTML = `
+        <div>
+            <strong>🆕 Species:</strong> ${newSpeciesName} <br>
+            <strong>Method:</strong> ${newMethodValue} <br>
+            <strong>Number:</strong>
+            <span class="new-species-count">${newCountValue}</span>
+            <input type="hidden" name="species_manual" value="${newSpeciesName}">
+            <input type="hidden" name="count_manual" value="${newCountValue}">
+            <input type="hidden" name="method_manual" value="${newMethodValue}">
+        </div>
+        <div>
+        <button type="button"
+        onclick="editNewSpeciesCount(this)"
+        style="background:#3498db;color:white;border:none;padding:3px 10px;border-radius:3px;cursor:pointer;margin-right:3px">
+        Edit
+    </button>
+        <button type="button" style="background: #e74c3c; color: #fff; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;" onclick="removeEntry(this)">Delete</button>
+        </div>
+    `;
+
+    savedList.appendChild(entryElement);
+
+    // Reset inputs
+    newSpeciesInput.value = '';
+    newCountInput.value = '';
+    if (newMethodSelect) newMethodSelect.selectedIndex = 0;
+}
+
+// Universal remove function
+function removeEntry(btn) {
+    btn.parentElement.remove();
+}
+
+function editCount(button) {
+
+    const entry =
+        button.closest('.species-saved-entry');
+
+    const countDisplay =
+        entry.querySelector('.species-count');
+
+    const hiddenCount =
+        entry.querySelector(
+            'input[name="count[]"]'
+        );
+
+    const currentCount =
+        Number(countDisplay.textContent);
+
+    const addCount = prompt(
+        "Enter additional count to add",
+        "0"
+    );
+
+    if (
+        addCount !== null &&
+        addCount !== "" &&
+        !isNaN(addCount) &&
+        Number(addCount) > 0
+    ) {
+
+        const updatedCount =
+            currentCount + Number(addCount);
+
+        countDisplay.textContent = updatedCount;
+
+        hiddenCount.value = updatedCount;
+
+        alert("Species count has been updated!");
+    }
+}
+
+function editNewSpeciesCount(button) {
+    const entry = button.closest('.new-species-saved-entry');
+    const countDisplay = entry.querySelector('.new-species-count');
+    const hiddenCount = entry.querySelector('input[name="count_manual"]');
+    const currentCount = Number(countDisplay.textContent);
+    const addCount = prompt("Enter additional count to add", "0");
+
+    if (addCount !== null && addCount !== "" && !isNaN(addCount) && Number(addCount) > 0) {
+        const updatedCount = currentCount + Number(addCount);
+        countDisplay.textContent = updatedCount;
+        hiddenCount.value = updatedCount;
+        alert("Species count has been updated!");
+    }
+}
+
+// ── AUTO-SAVE DRAFT TO LOCALSTORAGE ─────────────────────────────
+(function() {
+    const DRAFT_KEY = 'ecofield_draft';
+    let saveTimer = null;
+
+        function collectDraft() {
+        const data = {};
+        [
+            'year_group', 'group_id', 'member_name', 'student_id', 'location',
+            'survey_type', 'site_habitat', 'site_location', 'temperature',
+            'humidity', 'rainfall', 'wind_speed', 'wind_direction',
+            'light_intensity', 'canopy_cover', 'canopy_height', 'notes',
+            'latitude', 'longitude'
+        ].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) data[id] = el.value;
+        });
+
+        data.new_species_checkbox = document.getElementById('new_species_checkbox')?.checked || false;
+
+        data.species_entries = [];
+        document.querySelectorAll('#species-saved-entries .species-saved-entry').forEach(entry => {
+            const speciesInput = entry.querySelector('input[name="species[]"]');
+            const countInput = entry.querySelector('input[name="count[]"]');
+            const methodInput = entry.querySelector('input[name="method[]"]');
+            if (speciesInput && countInput) {
+                data.species_entries.push({
+                    speciesText: entry.dataset.speciesText || speciesInput.value,
+                    speciesValue: speciesInput.value,
+                    count: countInput.value,
+                    method: methodInput ? methodInput.value : '',
+                });
+            }
+        });
+
+        data.new_species_entries = [];
+        document.querySelectorAll('#new-species-saved-entries .new-species-saved-entry').forEach(entry => {
+            const nameInput = entry.querySelector('input[name="species_manual"]');
+            const countInput = entry.querySelector('input[name="count_manual"]');
+            const methodInput = entry.querySelector('input[name="method_manual"]');
+            if (nameInput && countInput) {
+                data.new_species_entries.push({
+                    name: nameInput.value,
+                    count: countInput.value,
+                    method: methodInput ? methodInput.value : '',
+                });
+            }
+        });
+
+        return data;
+    }
+
+    function saveDraft() {
+        try {
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(collectDraft()));
+        } catch (e) {}
+    }
+
+    function debouncedSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveDraft, 500);
+    }
+
+    function restoreDraft() {
+        try {
+            const raw = localStorage.getItem(DRAFT_KEY);
+            if (!raw) return;
+            const data = JSON.parse(raw);
+            if (!data || typeof data !== 'object') return;
+
+            [
+                'year_group', 'group_id', 'member_name', 'student_id', 'location',
+                'survey_type', 'site_habitat', 'site_location', 'temperature',
+                'humidity', 'rainfall', 'wind_speed', 'wind_direction',
+                'light_intensity', 'canopy_cover', 'canopy_height', 'notes',
+                'latitude', 'longitude'
+            ].forEach(id => {
+                if (data[id] !== undefined) {
+                    const el = document.getElementById(id);
+                    if (el) el.value = data[id];
+                }
+            });
+
+            const checkbox = document.getElementById('new_species_checkbox');
+            if (checkbox && data.new_species_checkbox) {
+                checkbox.checked = true;
+                document.getElementById('new-species-section').style.display = 'block';
+            }
+
+            const container = document.getElementById('species-saved-entries');
+            if (container && data.species_entries) {
+                data.species_entries.forEach(entry => {
+                    if (!entry.speciesValue || !entry.count) return;
+                    const entryDiv = document.createElement('div');
+                    entryDiv.className = 'species-saved-entry';
+                    entryDiv.dataset.speciesText = entry.speciesText || entry.speciesValue;
+                    entryDiv.style.cssText = 'border: 1px solid #ccc; padding: 10px; margin-bottom: 8px; border-radius: 5px; background: #f9f9f9; display: flex; justify-content: space-between; align-items: center;';
+                    entryDiv.innerHTML = `
+                        <div>
+                            <strong>Species:</strong> ${entry.speciesText || entry.speciesValue} <br>
+                            <strong>Method:</strong> ${entry.method || '—'} <br>
+                            <strong>Number:</strong>
+                            <span class="species-count">${entry.count}</span>
+                            <input type="hidden" name="species[]" value="${entry.speciesValue}">
+                            <input type="hidden" name="count[]" value="${entry.count}">
+                            <input type="hidden" name="method[]" value="${entry.method || ''}">
+                        </div>
+                        <button type="button" onclick="editCount(this)" style="background:#3498db;color:white;border:none;padding:5px 10px;border-radius:3px;cursor:pointer;">Edit</button>
+                        <button type="button" style="background: #e74c3c; color: #fff; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;" onclick="removeEntry(this)">Delete</button>
+                    `;
+                    container.appendChild(entryDiv);
+                });
+            }
+
+            const newContainer = document.getElementById('new-species-saved-entries');
+            if (newContainer && data.new_species_entries) {
+                data.new_species_entries.forEach(entry => {
+                    if (!entry.name || !entry.count) return;
+                    const entryElement = document.createElement('div');
+                    entryElement.className = 'new-species-saved-entry';
+                    entryElement.style.cssText = 'border: 1px solid #ccc; padding: 10px; margin-bottom: 8px; border-radius: 5px; background: #f8fff8; display: flex; justify-content: space-between; align-items: center;';
+                    entryElement.innerHTML = `
+                        <div>
+                            <strong>🆕 Species:</strong> ${entry.name} &nbsp; | &nbsp; <strong>Method:</strong> ${entry.method || '—'} &nbsp; | &nbsp; <strong>Number:</strong> ${entry.count}
+                            <input type="hidden" name="species_manual" value="${entry.name}">
+                            <input type="hidden" name="count_manual" value="${entry.count}">
+                            <input type="hidden" name="method_manual" value="${entry.method || ''}">
+                        </div>
+                        <button type="button" style="background: #e74c3c; color: #fff; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;" onclick="removeEntry(this)">✕ Remove</button>
+                    `;
+                    newContainer.appendChild(entryElement);
+                });
+            }
+
+            if (data.site_location) {
+                toggleSpeciesSection();
+                updateSpeciesOptions();
+            }
+        } catch (e) {
+            localStorage.removeItem(DRAFT_KEY);
+        }
+    }
+
+    function clearDraft() {
+        localStorage.removeItem(DRAFT_KEY);
+    }
+
+    window.clearAutoSavedDraft = clearDraft;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', restoreDraft);
+    } else {
+        restoreDraft();
+    }
+
+    document.addEventListener('input', function(e) {
+        if (e.target.closest('.form-container')) debouncedSave();
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target.closest('.form-container')) debouncedSave();
+    });
+})();
+
+function updateDirection(val){
+  const dirs = ["N","NE","E","SE","S","SW","W","NW","N"];
+  let index = Math.round(val/45);
+  document.getElementById('direction_val').innerText =
+      val + "° (" + dirs[index] + ")";
+}
+
+  </script>
+
+
+  <!-- OFFLINE PWA SCRIPT — replaces existing SW registration script -->
+<script>
+    const DB_NAME = 'EcoFieldDB';
+    const STORE = 'submissions';
+// ── SERVICE WORKER REGISTRATION ──────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('SW registered, scope:', reg.scope))
+      .catch(err => console.error('SW failed:', err));
+  });
+}
+
+// ── ONLINE/OFFLINE STATUS BANNER ─────────────────────────────
+function updateStatus() {
+  let banner = document.getElementById('offline-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'offline-banner';
+    banner.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100%; z-index: 9999;
+      padding: 8px; text-align: center; font-weight: bold;
+      font-size: 14px; transition: all 0.3s; border: 2em;
+    `;
+    document.body.prepend(banner);
+  }
+  if (navigator.onLine) {
+    banner.textContent = '🟢ONLINE — saved records will sync now';
+    banner.style.background = '#d4edda';
+    banner.style.color = '#155724';
+    setTimeout(() => { banner.style.display = 'none'; }, 4000);
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      navigator.serviceWorker.ready.then(reg => reg.sync.register('sync-ecofield'));
+    } else {
+      syncToServer();
+    }
+  } else {
+    banner.style.display = 'block';
+    banner.textContent = '🔴 OFFLINE — data will be saved locally and updated when internet connection is restored';
+    banner.style.background = '#f8d7da';
+    banner.style.color = '#721c24';
+  }
+}
+window.addEventListener('online', updateStatus);
+window.addEventListener('offline', updateStatus);
+updateStatus();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SYNC_STATUS') {
+      showMessage(event.data.statusType, event.data.text);
+      return;
+    }
+
+    if (event.data && event.data.type === 'SYNC_NOW') {
+      console.log('Background sync triggered by Service Worker');
+      if (!('SyncManager' in window)) {
+        syncToServer();
+      }
+    }
+  });
+}
+
+// ── INDEXEDDB SETUP ───────────────────────────────────────────
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 3);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE)) {
+        const store = db.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+        store.createIndex('synced', 'synced', { unique: false });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveToLocalDB(data) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).add({ ...data, synced: 0, savedAt: new Date().toISOString() });
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function getUnsyncedRecords() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).index('synced').getAll(0);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function markSynced(id) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const store = tx.objectStore(STORE);
+    const req = store.get(id);
+    req.onsuccess = () => {
+      const record = req.result;
+      record.synced = 1;
+      store.put(record);
+    };
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// ── COLLECT ALL FORM DATA ─────────────────────────────────────
+function collectFormData() {
+  // Collect species entries from the saved-entries divs
+  const speciesEntries = [];
+  document.querySelectorAll('#species-saved-entries .species-saved-entry').forEach(entry => {
+    const name = entry.querySelector('input[name="species[]"]')?.value;
+    const count = entry.querySelector('input[name="count[]"]')?.value;
+    const method = entry.querySelector('input[name="method[]"]')?.value;
+    if (name) speciesEntries.push({ species: name, count, method });
+  });
+
+  const newSpeciesEntries = [];
+  document.querySelectorAll('#new-species-saved-entries .new-species-saved-entry').forEach(entry => {
+    const name = entry.querySelector('input[name="species_manual"]')?.value;
+    const count = entry.querySelector('input[name="count_manual"]')?.value;
+    const method = entry.querySelector('input[name="method_manual"]')?.value;
+    if (name) newSpeciesEntries.push({ species: name, count, method });
+  });
+
+  // Collect photos as base64
+  const photoPromises = [];
+  ['imageInput', 'camera'].forEach(id => {
+    const input = document.getElementById(id);
+    if (input && input.files.length > 0) {
+      Array.from(input.files).forEach(file => {
+       photoPromises.push(new Promise(resolve => {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.src = e.target.result;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 1024;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve({ name: file.name, data: canvas.toDataURL('image/jpeg', 0.7) });
+    };
+  };
+  reader.readAsDataURL(file);
+}));
+      });
+    }
+  });
+
+  return Promise.all(photoPromises).then(photos => ({
+    // Step 1 — Researcher Info
+    year_group: document.getElementById('year_group')?.value || '',
+    group_id: document.getElementById('group_id')?.value || '',
+    member_name: document.getElementById('member_name')?.value || '',
+    student_id: document.getElementById('student_id')?.value || '',
+    // Step 2 — Location
+    location: document.getElementById('location')?.value || '',
+    survey_type: document.getElementById('survey')?.value || '',
+    latitude: document.getElementById('latitude')?.value || '',
+    longitude: document.getElementById('longitude')?.value || '',
+    photos: photos,
+    // Step 3 — Species
+    site_location: document.getElementById('site_location')?.value || '',
+    species_entries: speciesEntries,
+    new_species_entries: newSpeciesEntries,
+    habitat: document.getElementById('site_habitat')?.value || '',
+    // Step 4 — Microhabitat
+    temperature: document.getElementById('temperature')?.value || '',
+    humidity: document.getElementById('humidity')?.value || '',
+    rainfall: document.getElementById('rainfall')?.value || '',
+    wind_speed: document.getElementById('wind_speed')?.value || '',
+    wind_direction: document.getElementById('wind_direction')?.value || '',
+    // Step 5 — More Microhabitat
+    light_intensity: document.getElementById('light_intensity')?.value || '',
+    canopy_cover: document.getElementById('canopy_cover')?.value || '',
+    canopy_height: document.getElementById('canopy_height')?.value || '',
+    notes: document.getElementById('notes')?.value || '',
+  }));
+}
+
+// ── SYNC UNSYNCED RECORDS TO SERVER ──────────────────────────
+let pageSyncInProgress = false;
+
+async function syncToServer() {
+  if (pageSyncInProgress) return;
+  pageSyncInProgress = true;
+
+  const records = await getUnsyncedRecords();
+  if (records.length === 0) {
+    pageSyncInProgress = false;
+    return;
+  }
+
+  showMessage('warning', `🔄 Syncing ${records.length} offline record(s)...`);
+  console.log(`Syncing ${records.length} offline record(s)...`);
+
+  let successCount = 0;
+
+  for (const record of records) {
+    try {
+      // Build FormData for Flask to receive like a normal POST
+      const formData = new FormData();
+      Object.entries(record).forEach(([key, val]) => {
+        if (key === 'photos') {
+          val.forEach((photo, i) => formData.append(`offline_photo_${i}`, photo.data));
+        } else if (key === 'species_entries' || key === 'new_species_entries') {
+          formData.append(key, JSON.stringify(val));
+        } else {
+          formData.append(key, val);
+        }
+      });
+      formData.append('offline_sync', 'true');
+
+      const res = await fetch('/form', { method: 'POST', body: formData });
+      if (res.ok) {
+        await markSynced(record.id);
+        successCount++;
+        console.log(`Record ${record.id} synced ✅`);
+      }
+    } catch (err) {
+      console.warn(`Record ${record.id} sync failed, will retry later.`);
+    }
+  }
+
+  if (successCount > 0) {
+    showMessage('success', `✅ Successfully synced ${successCount} offline records!`);
+  }
+
+  pageSyncInProgress = false;
+}
+
+// ── INTERCEPT FORM SUBMIT ─────────────────────────────────────
+document.getElementById('form').addEventListener('submit', async function (e) {
+  e.preventDefault();
+
+  const data = await collectFormData();
+
+  if (!navigator.onLine) {
+    // Save locally
+    await saveToLocalDB(data);
+    showMessage('success', '📥 Saved offline! Will sync when you\'re back online.');
+    clearAutoSavedDraft();
+    this.reset();
+    clearPreviews();
+    // Register background sync if supported
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.sync.register('sync-ecofield');
+    }
+  } else {
+    // Try to submit normally
+    try {
+      const formData = new FormData(this);
+      const res = await fetch('/form', { method: 'POST', body: formData });
+      if (res.ok) {
+        showMessage('success', '✅ Data submitted successfully!');
+        clearAutoSavedDraft();
+        this.reset();
+        clearPreviews();
+      } else if (res.status === 400) {
+        showMessage('error', 'Invalid Group ID. Please ask your administrator to register it.');
+      } else {
+        // Server error — save locally as fallback
+        await saveToLocalDB(data);
+        showMessage('warning', '⚠️ Server error — saved locally, will retry.');
+      }
+    } catch (err) {
+      // Network error — save locally
+      await saveToLocalDB(data);
+      showMessage('warning', '⚠️ Connection lost — saved locally, will retry.');
+    }
+  }
+});
+
+function showMessage(type, text) {
+  const colors = {
+    success: { bg: '#d4edda', color: '#155724', border: '#c3e6cb' },
+    warning: { bg: '#fff3cd', color: '#856404', border: '#ffeeba' },
+    error:   { bg: '#f8d7da', color: '#721c24', border: '#f5c6cb' },
+  };
+  const c = colors[type];
+  let msg = document.getElementById('form-message');
+  if (!msg) {
+    msg = document.createElement('div');
+    msg.id = 'form-message';
+    document.querySelector('.form-container').prepend(msg);
+  }
+  msg.style.cssText = `background:${c.bg}; color:${c.color}; border:1px solid ${c.border};
+    padding:10px; margin-bottom:15px; border-radius:5px;`;
+  msg.textContent = text;
+  setTimeout(() => msg.remove(), 6000);
+}
+
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+
+  // Show your custom install button
+  const installBtn = document.getElementById('install-btn');
+  if (installBtn) installBtn.style.display = 'block';
+});
+
+document.getElementById('install-btn')?.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') {
+    document.getElementById('install-btn').style.display = 'none';
+  }
+  deferredPrompt = null;
+});
+
+</script>
+  
+</body>
+</html>

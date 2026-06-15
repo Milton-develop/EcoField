@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Profile - EcoField Logger</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+     <link rel="icon" type="image/png" href="/static/images/icon-192x192.png">
+</head>
+<body>
+    <!-- ===== NAVIGATION ===== -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <h5>University of Ghana &bull; School of Biological Sciences</h5>
+            {%if session.get('user_role')=='student'%}
+            <h2 class="user">STUDENT USER</h2>
+            {%endif%}
+            {%if session.get('user_role')=='admin'%}
+            <h2 class="user">ADMIN USER</h2>
+            {%endif%}
+            <div class="nav-links">
+                {% if session.get('user_role')=='student'%}
+        <a href="/logout" class="btn-logout">Home</a>
+        {%endif%}
+        {% if session.get('user_role')=='admin'%}
+        <a href="/admin/logout" class="btn-logout">Home</a>
+        {%endif%}
+                {%if session.get('user_role')=='admin'%}
+                <a href="/admin/view_archive">Admin</a>
+                {%endif%}
+                <a href="/profile" class="active">Profile</a>
+            </div>
+
+    </nav>
+
+    <main class="profile-container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <img src="{{ url_for('static', filename='images/Profile.jpg') }}" alt="MiltonPixel" class="profile-img">
+                <p class="tagline">Software Developer &bull; Graphic Designer</p>
+                <p class="tagline">Bridging Science, Technology and Design</p>
+            </div>
+            
+            <div class="profile-content">
+                <section class="about-section">
+                    <h2>About Developer</h2>
+                    <p>
+    Hi, I’m <strong style='color: #2e7d32;'>Moses Milton Todoe</strong>, the developer behind 
+    <strong style='color: #2e7d32;'>EcoField Logger</strong>. I’m a Biological Sciences student, designer, 
+    and aspiring software developer passionate about building digital tools that 
+    connect science, technology, and create real world impact.
+</p>
+
+<p>
+    My work is driven by a fascination with how thoughtful design and intelligent 
+    systems can simplify complex problems, especially within science, research, conservation, 
+    education, and data collection. Through EcoField Logger, I aim to create a 
+    modern field research experience and network that allows students, researchers, and 
+    conservation teams to collect, manage, and analyze data efficiently, even in 
+    low connectivity environments.
+</p>
+
+<p>
+    With a background in Animal Biology with Conservation Science and Biochemistry, 
+    I approach development with both scientific curiosity and creative thinking. 
+    I combine frontend technologies and UI/UX design principles to build experiences 
+    that are clean, intuitive, functional, and human centered.
+</p>
+
+<p>
+    Beyond coding, I’m deeply interested in the future of bioinformatics, digital 
+    innovation, and technology driven research solutions across emerging markets. 
+    My long-term vision is to bridge science, code, and design to create tools 
+    that not only work beautifully, but genuinely improve how people learn, 
+    research, and solve problems.
+</p>
+
+<p>
+    If you're interested in collaborating on research projects, digital innovation 
+    initiatives, conservation technology, web solutions, branding, or interdisciplinary 
+    ideas that combine science and technology, I’d be happy to connect. I'm always open 
+    to meaningful collaborations, learning opportunities, and building solutions that 
+    create real world impact. Feel free to reach out whether you have a project in mind, 
+    need support bringing an idea to life, or simply want to explore possibilities together.
+
+</p>
+                </section>
+
+                <section class="socials-section">
+                    <h2>Connect with Me</h2>
+                    <div class="social-links">
+                        <a href="https://github.com/Milton-develop" target="_blank" class="social-btn github" rel="noopener noreferrer">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
+                        <a href="https://www.linkedin.com/in/pixelsynth?utm_source=share_via&utm_content=profile&utm_medium=member_android" target="_blank" class="social-btn linkedin" rel="noopener noreferrer">
+                            <i class="fab fa-linkedin"></i> LinkedIn
+                        </a>
+                        <a href="https://tiktok.com/@hello.pixelsynth" target="_blank" class="social-btn tiktok" rel="noopener noreferrer">
+                            <i class="fab fa-tiktok"></i> TikTok
+                        </a>
+                        <a href="https://instagram.com/hello.pixelsynth" target="_blank" class="social-btn instagram" rel="noopener noreferrer">
+                            <i class="fab fa-instagram"></i> Instagram
+                        </a>
+                        <a href="mailto:hello.miltonpixel@gmail.com" class="social-btn email">
+                            <i class="fas fa-envelope"></i> Email
+                        </a>
+                        <a href="https://wa.me/233544711043" target="_blank" class="social-btn whatsapp" rel="noopener noreferrer">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer>
+        <p class="copyright"> &copy;
+            EcoField Logger by <strong>MiltonPixel</strong> — Department of Animal Biology and Conservation Science (UG)</p>
+    </footer>
+</body>
+</html>

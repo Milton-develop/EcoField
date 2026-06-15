@@ -1,0 +1,84 @@
+/* help.css inherits main styles from style.css */
+
+.help-container {
+    max-width: 800px;
+    margin: 3rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+}
+
+.help-section {
+    margin-bottom: 3rem;
+}
+
+.help-section h2 {
+    color: #1b5e20;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.help-section p {
+    line-height: 1.8;
+    color: #444;
+}
+
+/* ===== Report Issue Banner ===== */
+.report {
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+    color: #6d4c00;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.report a {
+    background: #2e7d32;
+    color: white;
+    padding: 0.5rem 1.2rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.report a:hover {
+    background: #226d26;
+}
+
+.help-container table{
+    width:100%; 
+    margin-top:10px;
+}
+
+.help-container table th{
+    padding: 10px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .help-container {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .help-section h2 {
+        font-size: 1.3rem;
+    }
+
+    .help-container table th{
+        display: none;
+    }
+}

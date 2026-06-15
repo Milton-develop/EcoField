@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+  <link rel="apple-touch-icon" href="/static/images/icon-192x192.png">
+  <link rel="icon" href="/static/images/icon-192x192.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2ecc71">
+  <title>EcoField Logger</title>
+</head>
+<body>
+
+  <!-- ===== NAVIGATION ===== -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <h5>University of Ghana &bull; School of Biological Sciences</h5>
+      {%if session.get('user_role')=='student'%}
+      <h2 class="user">STUDENT USER</h2>
+      {%endif%}
+      {%if session.get('user_role')=='admin'%}
+      <h2 class="user">ADMIN USER</h2>
+      {%endif%}
+      <div class="nav-links">
+        <a href="/home" class="active">Home</a>
+        {%if session.get('user_role')=='admin'%}
+        <a href="/admin/view_archive">Admin</a>
+        {%endif%}
+        <a href="/help">Help</a>
+       {% if session.get('user_role')=='student'%}
+        {% include '_notification_bell.html' %}
+        {%endif%}
+        <!-- Add to your navbar or index.html -->
+<a id="install-btn" style="display:none; background:none;" class="gps-btn">
+  Install
+</a>
+        <a href="/" style="background-color: red; color: white;">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== HEADER ===== -->
+  <div class="header">
+   <h1>EcoField Logger</h1>
+  <h4 class="head_text_overlay"> 
+    Designed for fieldwork in the Department of Animal Biology <br>
+    and Conservation Science
+  </h4>
+  <div class="top">
+    <a href="/form" class="btnnnn">+ Create New Entry</a>
+  <a href="/group" class="btnnnnn">View My Data</a>
+  </div>
+  </div>
+  
+  <main>
+        <div class="idea">
+              <p class="core_idea">
+                <strong style="color: #2e7d32;">EcoField Logger</strong> is a field data collection 
+                platform designed for students working in groups, enabling reliable data capture in 
+                low-connectivity environments while ensuring seamless
+                 synchronization and organization of collected data.  Field data collection is often
+                  disrupted by poor internet connectivity and unstructured data entry. <strong style="color: #2e7d32;">EcoField Logger</strong>
+                  solves this by allowing students to collect and store data offline, while 
+                  automatically syncing and organizing it once a connection is available. Students 
+                  simply log in, select their group or project, and start entering field observations
+                   using a simple, offline-friendly interface. Once back online, all data syncs 
+                   automatically to the central database. The collected data can then be analyzed
+                    for research projects, lab reports, or group presentations, making <strong style="color: #2e7d32;">EcoField Logger</strong>
+                    a reliable companion from fieldwork to final reporting.
+              </p>
+              <p>
+                <img src="/static/images/about.jpg" alt="Deer in a field" class="core_image">
+              </p>
+        </div>
+
+  </main>
+  
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <p class="copyright"> &copy;
+        EcoField Logger by <a href="/profile" style="color: white;">MiltonPixel</a> — Department of Animal Biology and Conservation Science (UG)</p>
+  </footer>
+
+
+  <script>
+  // ── SERVICE WORKER REGISTRATION ──────────────────────
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('SW registered, scope:', reg.scope))
+        .catch(err => console.error('SW failed:', err));
+    });
+  }
+
+  // ── PWA INSTALL PROMPT ────────────────────────────────
+  let deferredPrompt;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installBtn = document.getElementById('install-btn');
+    if (installBtn) installBtn.style.display = 'block';
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('install-btn')?.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        document.getElementById('install-btn').style.display = 'none';
+      }
+      deferredPrompt = null;
+    });
+  });
+</script>
+</body>
+</html>

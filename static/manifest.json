@@ -1,0 +1,21 @@
+{
+  "name": "EcoField Logger",
+  "short_name": "EcoField",
+  "description": "Data collection app for the Department of Animal Biology and Conservation Science",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2ecc71",
+  "icons": [
+    {
+      "src": "/static/images/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/images/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

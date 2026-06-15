@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoField Metrics Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" type="image/png" href="/static/images/icon-192x192.png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+    body { background: #f5f7f5; font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+    .metrics-wrap { width: 100%; max-width: 1400px; margin: 0 auto; padding: 1.5rem 2rem; }
+    .metrics-wrap h1 { color: #1b5e20; margin-bottom: 0.25rem; }
+    .metrics-wrap .subtitle { color: #555; margin-top: 0; margin-bottom: 1.5rem; }
+
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid #ccc; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .tab-btn { padding: 0.65rem 1.2rem; border: none; background: #e8f0e8; cursor: pointer; font-size: 0.95rem; font-weight: 500; color: #333; border-radius: 8px 8px 0 0; transition: all 0.15s; }
+    .tab-btn:hover { background: #c8e6c9; }
+    .tab-btn.active { background: #2e7d32; color: #fff; }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .metric-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .metric-card { background: #fff; border-radius: 10px; padding: 1.25rem; box-shadow: 0 1px 6px rgba(0,0,0,0.07); text-align: center; border-left: 4px solid #2e7d32; }
+    .metric-card .label { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.3px; }
+    .metric-card .value { font-size: 1.8rem; font-weight: 700; color: #1b5e20; }
+
+    .chart-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .chart-box { flex: 1 1 400px; min-width: 0; background: #fff; border-radius: 10px; padding: 1.25rem; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+    .chart-box h3 { margin-top: 0; color: #1b5e20; font-size: 1rem; }
+    .chart-box canvas { width: 100% !important; max-width: 100%; max-height: 350px; }
+
+    .data-table-wrap { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+    .data-table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .data-table-wrap th { background: #2e7d32; color: #fff; padding: 0.5rem 0.75rem; text-align: left; }
+    .data-table-wrap td { padding: 0.4rem 0.75rem; border-bottom: 1px solid #e0e0e0; }
+
+    .heatmap-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    .heatmap-table th { background: #2e7d32; color: #fff; padding: 0.4rem 0.5rem; text-align: center; position: sticky; top: 0; }
+    .heatmap-table td { padding: 0.3rem 0.4rem; text-align: center; border: 1px solid #ddd; }
+
+    #spatial-map { height: 550px; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+
+    .loading { text-align: center; padding: 4rem 2rem; color: #666; font-size: 1.1rem; }
+    .error-msg { text-align: center; padding: 3rem; color: #c62828; background: #ffebee; border-radius: 10px; margin: 2rem 0; }
+
+    .color-bar { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 4px; }
+    .env-table th, .env-table td { padding: 0.4rem 0.75rem; border: 1px solid #ddd; }
+    .env-table th { background: #e8f0e8; }
+
+    .fade-in { animation: fadeIn 0.25s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    @media (max-width: 640px) {
+      html, body { overflow-x: hidden; }
+      .metrics-wrap { padding: 0.75rem; overflow-x: hidden; }
+      .metrics-wrap h1 { font-size: 1.25rem; line-height: 1.2; margin-top: 0.25rem; }
+      .metrics-wrap .subtitle { font-size: 0.85rem; line-height: 1.35; margin-bottom: 1rem; }
+      .metrics-wrap > p { margin: 0 0 1rem; }
+
+      .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; gap: 0; }
+      .tabs::-webkit-scrollbar { display: none; }
+      .tab-btn { font-size: 0.75rem; padding: 0.45rem 0.65rem; white-space: nowrap; flex-shrink: 0; }
+
+      .metric-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; margin-bottom: 0.75rem; }
+      .metric-card { min-width: 0; padding: 0.75rem 0.5rem; border-radius: 8px; }
+      .metric-card .value { font-size: 1.25rem; line-height: 1.15; overflow-wrap: anywhere; }
+      .metric-card .label { font-size: 0.64rem; line-height: 1.2; letter-spacing: 0; overflow-wrap: anywhere; }
+
+      .chart-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; margin-bottom: 0.75rem; }
+      .chart-box { width: 100%; min-width: 0; flex: none !important; padding: 0.75rem; border-radius: 8px; overflow: hidden; }
+      .chart-box canvas { width: 100% !important; max-width: 100%; max-height: 220px; }
+      .chart-box h3 { font-size: 0.85rem; }
+
+      #spatial-map { height: 320px; }
+
+      .data-table-wrap { padding: 0.5rem; font-size: 0.75rem; border-radius: 8px; }
+      .data-table-wrap table,
+      .heatmap-table,
+      .env-table,
+      #topSppTable {
+        display: table;
+        width: max-content;
+        min-width: 100%;
+        border-collapse: collapse;
+        font-size: 0.72rem;
+      }
+      .data-table-wrap thead,
+      .heatmap-table thead,
+      .env-table thead,
+      #topSppTable thead { display: table-header-group; }
+      .data-table-wrap tbody,
+      .heatmap-table tbody,
+      .env-table tbody,
+      #topSppTable tbody { display: table-row-group; }
+      .data-table-wrap tr,
+      .heatmap-table tr,
+      .env-table tr,
+      #topSppTable tr {
+        display: table-row;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+      }
+      .data-table-wrap th,
+      .data-table-wrap td,
+      .heatmap-table th,
+      .heatmap-table td,
+      .env-table th,
+      .env-table td,
+      #topSppTable th,
+      #topSppTable td {
+        display: table-cell;
+        float: none;
+        text-align: left;
+        padding: 0.3rem 0.4rem;
+        white-space: nowrap;
+      }
+      .data-table-wrap td::before,
+      .heatmap-table td::before,
+      .env-table td::before,
+      #topSppTable td::before { content: none; }
+
+      .heatmap-table { font-size: 0.65rem; }
+      .heatmap-table th,
+      .heatmap-table td { padding: 0.2rem 0.3rem; }
+
+      .env-table th,
+      .env-table td { padding: 0.3rem 0.4rem; font-size: 0.72rem; }
+
+      .dash { font-size: 0.8rem; padding: 0.4rem 0.8rem; }
+
+      #corrBox { margin-top: 1rem !important; padding: 0.75rem; }
+      #corrBox h3 { font-size: 0.85rem; }
+      #corrWrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+      #topSppTableBox { flex: none !important; width: 100%; }
+      #topSppTableBox h3 { font-size: 0.85rem; }
+
+      .fade-in { animation-duration: 0.15s; }
+
+      #tabContent .btn { width: 100%; font-size: 0.78rem; padding: 0.55rem 0.7rem; }
+    }
+
+    .dash, .btn {
+      background: #2e7d32; color: #fff; border: none; padding: 0.5rem 1rem;
+      border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 500;
+    }
+    .dash:hover, .btn:hover { background: #1b5e20; }
+  </style>
+</head>
+<body>
+<div class="metrics-wrap">
+  <h1>EcoField Metrics Dashboard</h1>
+  <p class="subtitle">Biodiversity &amp; Environmental Insights from EcoField Logger data</p>
+  <p>
+    <a href='/admin/dashboard'>
+      <button class='dash'>Back to Dashboard</button>
+    </a>
+  </p>
+
+  <div class="tabs" id="tabHeader">
+    <button class="tab-btn active" data-tab="tab1">Overview</button>
+    <button class="tab-btn" data-tab="tab2">Biodiversity</button>
+    <button class="tab-btn" data-tab="tab3">Species Analysis</button>
+    <button class="tab-btn" data-tab="tab4">Environment</button>
+    <button class="tab-btn" data-tab="tab5">Spatial</button>
+    <button class="tab-btn" data-tab="tab6">Raw Data</button>
+  </div>
+
+  <div id="loading" class="loading">Loading metrics data...</div>
+  <div id="error" class="error-msg" style="display:none;"></div>
+
+  <div id="tabContent" style="display:none;">
+    <!-- ════ TAB 1: OVERVIEW ════ -->
+    <div class="tab-pane active fade-in" id="tab1">
+      <div class="metric-cards" id="overviewCards"></div>
+      <div class="chart-row">
+        <div class="chart-box"><h3>Habitat Composition</h3><canvas id="habChart"></canvas></div>
+        <div class="chart-box"><h3>Species Distribution (Top 15)</h3><canvas id="sppDistChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ════ TAB 2: BIODIVERSITY ════ -->
+    <div class="tab-pane fade-in" id="tab2">
+      <div class="chart-row">
+        <div class="chart-box"><h3>Simpson's Index by Habitat</h3><canvas id="simpsonChart"></canvas></div>
+        <div class="chart-box"><h3>Shannon Index by Habitat</h3><canvas id="shannonChart"></canvas></div>
+      </div>
+      <div class="data-table-wrap" id="divTableWrap"></div>
+    </div>
+
+    <!-- ════ TAB 3: SPECIES ANALYSIS ════ -->
+    <div class="tab-pane fade-in" id="tab3">
+      <div class="chart-row">
+        <div class="chart-box" style="flex:1;"><h3>Top 10 Species – Rank Abundance</h3><canvas id="rankChart"></canvas></div>
+        <div class="chart-box" style="flex:0 0 350px;" id="topSppTableBox">
+          <h3>Top 20 Species</h3>
+          <div style="max-height:350px;overflow-y:auto;"><table class="data-table" id="topSppTable"><thead><tr><th>Species</th><th>Count</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </div>
+      <h3 style="color:#1b5e20;margin-top:1.5rem;">Species × Habitat Abundance (Top 25 Species)</h3>
+      <div class="data-table-wrap" style="max-height:500px;overflow:auto;" id="heatmapWrap"></div>
+    </div>
+
+    <!-- ════ TAB 4: ENVIRONMENT ════ -->
+    <div class="tab-pane fade-in" id="tab4">
+      <div id="envSummaryWrap"></div>
+      <div class="chart-box" style="margin-top:1.5rem;" id="corrBox">
+        <h3>Environmental Variable Correlation</h3>
+        <div style="overflow-x:auto;" id="corrWrap"></div>
+      </div>
+    </div>
+
+    <!-- ════ TAB 5: SPATIAL ════ -->
+    <div class="tab-pane fade-in" id="tab5">
+      <div id="spatial-map"></div>
+    </div>
+
+    <!-- ════ TAB 6: RAW DATA ════ -->
+    <div class="tab-pane fade-in" id="tab6">
+      <div style="margin-bottom:0.75rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <button class="btn" onclick="downloadCSV('processed')">Download Processed Data</button>
+        <span style="color:#888;font-size:0.85rem;align-self:center;">Showing up to 500 rows</span>
+      </div>
+      <div class="data-table-wrap" id="rawDataWrap"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Color palette matching Plotly Dark2 ──
+const COLORS = ['#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02','#a6761d','#666666','#2e7d32','#1565c0','#6a1b9a','#c62828'];
+
+let state = null;
+
+// ── Tab switching ──
+document.getElementById('tabHeader').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const pane = document.getElementById(btn.dataset.tab);
+  if (pane) pane.classList.add('active');
+  if (btn.dataset.tab === 'tab5' && state) initMap();
+});
+
+// ── Destroy chart helper ──
+const charts = {};
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+// ── Main fetch ──
+async function loadMetrics() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('error').style.display = 'none';
+  document.getElementById('tabContent').style.display = 'none';
+  try {
+    const res = await fetch('/api/metrics');
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    state = await res.json();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('tabContent').style.display = 'block';
+    renderAll();
+  } catch (err) {
+    document.getElementById('loading').style.display = 'none';
+    const el = document.getElementById('error');
+    el.style.display = 'block';
+    el.textContent = 'Error loading metrics: ' + err.message;
+  }
+}
+
+function renderAll() {
+  renderOverview();
+  renderBiodiversity();
+  renderSpeciesAnalysis();
+  renderEnvironment();
+  // map rendered on tab switch
+  renderRawData();
+}
+
+// ═══════════════════ TAB 1 ═══════════════════
+function renderOverview() {
+  const o = state.overview;
+  document.getElementById('overviewCards').innerHTML = `
+    <div class="metric-card"><div class="label">Total Organisms</div><div class="value">${o.total_organisms.toLocaleString()}</div></div>
+    <div class="metric-card"><div class="label">Species Richness</div><div class="value">${o.species_richness}</div></div>
+    <div class="metric-card"><div class="label">Habitats Surveyed</div><div class="value">${o.habitats_surveyed}</div></div>
+    <div class="metric-card"><div class="label">Active Groups</div><div class="value">${o.active_groups}</div></div>
+    <div class="metric-card"><div class="label">Avg Individuals/Species</div><div class="value">${o.avg_per_species}</div></div>
+  `;
+
+  // Habitat bar chart
+  const habLabels = o.habitat_composition.map(d => d.habitat);
+  const habData = o.habitat_composition.map(d => d.count);
+  destroyChart('habChart');
+  charts.habChart = new Chart(document.getElementById('habChart'), {
+    type: 'bar', data: {
+      labels: habLabels,
+      datasets: [{ label: 'Count', data: habData, backgroundColor: COLORS.slice(0, habLabels.length), borderRadius: 4 }]
+    }, options: { responsive: true, plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+
+  // Species pie chart
+  const sppLabels = o.species_distribution.map(d => d.species);
+  const sppData = o.species_distribution.map(d => d.count);
+  destroyChart('sppDistChart');
+  charts.sppDistChart = new Chart(document.getElementById('sppDistChart'), {
+    type: 'doughnut', data: {
+      labels: sppLabels,
+      datasets: [{ data: sppData, backgroundColor: COLORS, borderWidth: 1 }]
+    }, options: { responsive: true, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } } }
+  });
+}
+
+// ═══════════════════ TAB 2 ═══════════════════
+function renderBiodiversity() {
+  const idx = state.biodiversity.indices;
+  const labels = idx.map(d => d.habitat);
+
+  destroyChart('simpsonChart');
+  charts.simpsonChart = new Chart(document.getElementById('simpsonChart'), {
+    type: 'bar', data: {
+      labels,
+      datasets: [{
+        label: "Simpson's Index", data: idx.map(d => d.simpson),
+        backgroundColor: '#4caf50', borderRadius: 4
+      }]
+    }, options: { responsive: true, scales: { y: { min: 0, max: 1 } } }
+  });
+
+  destroyChart('shannonChart');
+  charts.shannonChart = new Chart(document.getElementById('shannonChart'), {
+    type: 'bar', data: {
+      labels,
+      datasets: [{
+        label: 'Shannon Index', data: idx.map(d => d.shannon),
+        backgroundColor: '#7b1fa2', borderRadius: 4
+      }]
+    }, options: { responsive: true, scales: { y: { beginAtZero: true } } }
+  });
+
+  // Table
+  let html = '<table><thead><tr><th>Habitat</th><th>Species Richness</th><th>Simpson\'s Index</th><th>Shannon Index</th><th>Evenness</th></tr></thead><tbody>';
+  for (const d of idx) {
+    html += `<tr><td>${d.habitat}</td><td>${d.richness}</td><td>${d.simpson}</td><td>${d.shannon}</td><td>${d.evenness}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  document.getElementById('divTableWrap').innerHTML = html;
+}
+
+// ═══════════════════ TAB 3 ═══════════════════
+function renderSpeciesAnalysis() {
+  const sa = state.species_analysis;
+
+  // Table
+  let rows = '';
+  for (const d of sa.top_species) {
+    rows += `<tr><td>${d.species}</td><td>${d.count.toLocaleString()}</td></tr>`;
+  }
+  document.querySelector('#topSppTable tbody').innerHTML = rows;
+
+  // Rank bar chart (top 10)
+  const top10 = sa.top_species.slice(0, 10);
+  destroyChart('rankChart');
+  charts.rankChart = new Chart(document.getElementById('rankChart'), {
+    type: 'bar', data: {
+      labels: top10.map(d => d.species),
+      datasets: [{
+        label: 'Count', data: top10.map(d => d.count),
+        backgroundColor: COLORS, borderRadius: 4
+      }]
+    }, options: { responsive: true, indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+
+  // Heatmap
+  const hm = sa.heatmap;
+  if (!hm.species || !hm.species.length) {
+    document.getElementById('heatmapWrap').innerHTML = '<p style="color:#888;">No data for heatmap.</p>';
+    return;
+  }
+  const maxVal = Math.max(...hm.values.flat());
+  let heat = '<table class="heatmap-table"><thead><tr><th>Species</th>';
+  for (const h of hm.habitats) heat += `<th>${h}</th>`;
+  heat += '</tr></thead><tbody>';
+  for (let i = 0; i < hm.species.length; i++) {
+    heat += `<tr><td style="text-align:left;font-weight:500;white-space:nowrap;">${hm.species[i]}</td>`;
+    for (let j = 0; j < hm.habitats.length; j++) {
+      const v = hm.values[i][j];
+      const ratio = maxVal > 0 ? v / maxVal : 0;
+      const r = Math.round(255 - ratio * 200);
+      const g = 255;
+      const b = Math.round(255 - ratio * 150);
+      heat += `<td style="background:rgb(${r},${g},${b});">${v || 0}</td>`;
+    }
+    heat += '</tr>';
+  }
+  heat += '</tbody></table>';
+  document.getElementById('heatmapWrap').innerHTML = heat;
+}
+
+// ═══════════════════ TAB 4 ═══════════════════
+function renderEnvironment() {
+  const env = state.environment;
+  const wrap = document.getElementById('envSummaryWrap');
+
+  if (!env.available_vars || !env.available_vars.length) {
+    wrap.innerHTML = '<div class="chart-box"><p style="color:#888;">No environmental variables found in the dataset.</p></div>';
+    document.getElementById('corrWrap').innerHTML = '';
+    return;
+  }
+
+  let html = '<div class="data-table-wrap"><table class="env-table"><thead><tr><th>Habitat</th>';
+  for (const v of env.available_vars) html += `<th>${v} (mean±std)</th>`;
+  html += '</tr></thead><tbody>';
+  for (const [hab, vars] of Object.entries(env.summary)) {
+    html += `<tr><td><strong>${hab}</strong></td>`;
+    for (const v of env.available_vars) {
+      const d = vars[v];
+      html += `<td>${d.mean !== null ? d.mean : '—'}${d.std !== null ? ' ± ' + d.std : ''}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+
+  // Correlation matrix
+  const corr = env.correlation;
+  if (!corr.labels || !corr.labels.length) {
+    document.getElementById('corrWrap').innerHTML = '<p style="color:#888;">No correlation data.</p>';
+    return;
+  }
+  let ct = '<table class="heatmap-table"><thead><tr><th></th>';
+  for (const l of corr.labels) ct += `<th>${l}</th>`;
+  ct += '</tr></thead><tbody>';
+  for (let i = 0; i < corr.labels.length; i++) {
+    ct += `<tr><td style="text-align:left;font-weight:500;">${corr.labels[i]}</td>`;
+    for (let j = 0; j < corr.labels.length; j++) {
+      const v = corr.matrix[i][j];
+      const ratio = (v + 1) / 2;
+      const r = Math.round(255 - ratio * 200);
+      const b = Math.round(255 - (1 - ratio) * 200);
+      ct += `<td style="background:rgb(${r},200,${b});color:${Math.abs(v) > 0.5 ? '#fff' : '#333'};">${v}</td>`;
+    }
+    ct += '</tr>';
+  }
+  ct += '</tbody></table>';
+  document.getElementById('corrWrap').innerHTML = ct;
+}
+
+// ═══════════════════ TAB 5 ═══════════════════
+let mapInstance = null;
+function initMap() {
+  const sp = state.spatial.data;
+  if (!sp || !sp.length) {
+    document.getElementById('spatial-map').innerHTML = '<div class="chart-box"><p style="color:#888;">Latitude and Longitude data not available.</p></div>';
+    return;
+  }
+  if (mapInstance) { mapInstance.invalidateSize(); return; }
+
+  const map = L.map('spatial-map').setView([51.5, -0.1], 10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  mapInstance = map;
+
+  const habitatColors = {};
+  let ci = 0;
+  for (const pt of sp) {
+    if (!habitatColors[pt.habitat]) {
+      habitatColors[pt.habitat] = COLORS[ci % COLORS.length];
+      ci++;
+    }
+    const lat = parseFloat(pt.latitude);
+    const lng = parseFloat(pt.longitude);
+    if (isNaN(lat) || isNaN(lng)) continue;
+    const r = Math.max(5, Math.min(20, Math.sqrt(pt.count || 1) * 3));
+    L.circleMarker([lat, lng], {
+      radius: r, color: habitatColors[pt.habitat], fillOpacity: 0.6, weight: 1
+    }).addTo(map).bindPopup(`<b>${pt.species}</b><br>Habitat: ${pt.habitat}<br>Count: ${pt.count}`);
+  }
+
+  // Legend
+  const legend = L.control({ position: 'bottomright' });
+  legend.onAdd = () => {
+    const div = L.DomUtil.create('div', 'info legend');
+    div.style.background = 'white';
+    div.style.padding = '8px 12px';
+    div.style.borderRadius = '6px';
+    div.style.boxShadow = '0 1px 4px rgba(0,0,0,0.2)';
+    div.innerHTML = '<strong>Habitats</strong><br>';
+    for (const [h, c] of Object.entries(habitatColors)) {
+      div.innerHTML += `<span style="display:inline-block;width:10px;height:10px;background:${c};border-radius:50%;margin-right:4px;"></span> ${h}<br>`;
+    }
+    return div;
+  };
+  legend.addTo(map);
+
+  if (sp.length) {
+    const lats = sp.map(p => parseFloat(p.latitude)).filter(v => !isNaN(v));
+    const lngs = sp.map(p => parseFloat(p.longitude)).filter(v => !isNaN(v));
+    if (lats.length && lngs.length) {
+      map.fitBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]], { padding: [30, 30] });
+    }
+  }
+}
+
+// ═══════════════════ TAB 6 ═══════════════════
+function renderRawData() {
+  const rd = state.raw_data;
+  if (!rd.columns || !rd.columns.length) {
+    document.getElementById('rawDataWrap').innerHTML = '<p style="color:#888;">No raw data available.</p>';
+    return;
+  }
+  let html = '<table><thead><tr>';
+  for (const c of rd.columns) html += `<th>${c}</th>`;
+  html += '</tr></thead><tbody>';
+  for (const row of rd.rows) {
+    html += '<tr>';
+    for (let i = 0; i < rd.columns.length; i++) {
+      const val = row[i];
+      html += `<td>${val === null || val === undefined || val === 'NaN' ? '—' : val}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById('rawDataWrap').innerHTML = html;
+}
+
+// ── CSV Download ──
+function downloadCSV() {
+  const rd = state.raw_data;
+  if (!rd.columns || !rd.rows.length) return;
+  let csv = rd.columns.join(',') + '\n';
+  for (const row of rd.rows) {
+    csv += row.map(v => {
+      if (v === null || v === undefined || v === 'NaN') return '';
+      const s = String(v);
+      return s.includes(',') ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(',') + '\n';
+  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ecofields_metrics.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Start ──
+loadMetrics();
+</script>
+</body>
+</html>

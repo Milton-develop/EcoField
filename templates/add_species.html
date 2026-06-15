@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/group.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_groups.css') }}">
+   <link rel="icon" type="image/png" href="/static/images/icon-192x192.png">
+  <title>New Species Entries</title>
+</head>
+<body>
+  {% set active_sidebar = 'species' %}
+
+  <div class="admin-layout">
+    {% include '_admin_sidebar.html' %}
+
+    <div class="admin-content">
+      <div class="head">
+        <h1 class="text">
+          New Species ({{ group_id }})
+        </h1>
+        <p>Only manually entered (new / unlisted) species are shown below.</p>
+      </div>
+      <a href="/download_group" class="btn">Download CSV</a>
+      
+      <main>
+
+        <!-- ── Summary stats ── -->
+        {% if new_species_rows %}
+        <div class="summary-box">
+          <div class="stat">
+            <div class="num">{{ total_entries }}</div>
+            <div class="lbl">Observations with new species</div>
+          </div>
+          <div class="stat">
+            <div class="num">{{ unique_species | length }}</div>
+            <div class="lbl">Unique new species</div>
+          </div>
+          <div class="stat">
+            <div class="num">{{ total_count }}</div>
+            <div class="lbl">Total individuals counted</div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if new_species_rows %}
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Group ID</th>
+                  <th>Member Name</th>
+                  <th>Student ID</th>
+                  <th>Species Name</th>
+                  <th>Count</th>
+                  <th>Habitat</th>
+                  <th>Site Location</th>
+                  <th>Survey Type</th>
+                  <th>Notes</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in new_species_rows %}
+                <tr>
+                  <td>{{ row.group_id }}</td>
+                  <td>{{ row.member_name }}</td>
+                  <td>{{ row.student_id }}</td>
+
+                  <!-- New species pills -->
+                  <td>
+                    {% for sp in row.zipped_manual %}
+                      {% if sp[0] %}
+                        <span class="species-pill">{{ sp[0] }}</span>
+                      {% endif %}
+                    {% endfor %}
+                  </td>
+
+                  <!-- Count pills aligned with species -->
+                  <td>
+                    {% for sp in row.zipped_manual %}
+                      {% if sp[0] %}
+                        <span class="count-pill">{{ sp[1] }}</span>
+                      {% endif %}
+                    {% endfor %}
+                  </td>
+
+                  <td>{{ row.habitat or '—' }}</td>
+                  <td>{{ row.site_location or '—' }}</td>
+                  <td>{{ row.survey_type or '—' }}</td>
+                  <td>{{ row.notes or '—' }}</td>
+                  <td class="ts-cell">{{ row.timestamp }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        {% else %}
+          <div class="empty-state">
+            <p>No new species have been manually entered yet.</p>
+          </div>
+        {% endif %}
+
+      </main>
+    </div>
+  </div>
+
+</body>
+</html>
