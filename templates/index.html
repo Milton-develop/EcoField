@@ -88,7 +88,7 @@
   // ── SERVICE WORKER REGISTRATION ──────────────────────
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js?v=7')
+      navigator.serviceWorker.register('/sw.js?v=8')
         .then(reg => console.log('SW registered, scope:', reg.scope))
         .catch(err => console.error('SW failed:', err));
     });
@@ -115,6 +115,16 @@
       deferredPrompt = null;
     });
   });
+
+  (function() {
+    var role = localStorage.getItem('ecofield_role');
+    if (role && !document.querySelector('.user')) {
+      var userEl = document.createElement('h2');
+      userEl.className = 'user';
+      userEl.textContent = role === 'student' ? 'STUDENT USER' : 'ADMIN USER';
+      document.querySelector('.nav-container')?.appendChild(userEl);
+    }
+  })();
 </script>
 </body>
 </html>

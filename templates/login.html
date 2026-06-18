@@ -15,11 +15,24 @@
     <div class="login-box">
         <h2>Welcome to <strong>EcoField Logger</strong></h2>
         <p>Please identify your role to continue</p>
-        <form method="POST">
+        <form method="POST" id="login-form">
             <input type="text" name="username" placeholder="Enter 'student' or 'admin'" required style="width: 90%; padding: 10px;">
             {% if error %}<p style="color: red;">{{ error }}</p>{% endif %}
             <button type="submit" class="login-btn">Enter Platform</button>
         </form>
+
+    <script>
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+        if (!navigator.onLine) {
+            e.preventDefault();
+            var role = this.querySelector('input[name="username"]').value.trim().toLowerCase();
+            if (role === 'student' || role === 'admin') {
+                localStorage.setItem('ecofield_role', role);
+                window.location.href = '/home';
+            }
+        }
+    });
+    </script>
     </div>
 </body>
 </html>
