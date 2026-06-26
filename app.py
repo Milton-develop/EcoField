@@ -44,6 +44,10 @@ def add_no_cache(response):
         response.headers['Expires'] = '0'
     return response
 
+@app.context_processor
+def inject_cache_bust():
+    return {'cache_bust': '3'}
+
 PWD_DELIM = "||"
 
 def _fernet():
