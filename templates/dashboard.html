@@ -357,13 +357,16 @@
 
       <div class="notif-form">
         <h2>Send Notification</h2>
-        <p style="color: #666; margin-bottom: 1rem;">Send a message to all registered groups.</p>
-        <form method="POST" action="{{ url_for('admin_dashboard') }}">
+        <p style="color: #666; margin-bottom: 1rem;">Send a message to all registered groups. You may optionally attach a file (PDF, CSV, PowerPoint, etc.).</p>
+        <form method="POST" action="{{ url_for('admin_dashboard') }}" enctype="multipart/form-data">
           <label for="notif_title">Title</label>
           <input type="text" name="title" id="notif_title" required maxlength="100" placeholder="e.g. Reminder: Field trip tomorrow">
 
           <label for="notif_message">Message</label>
           <textarea name="message" id="notif_message" required placeholder="Write your message here..."></textarea>
+
+          <label for="notif_attachment">Attachment (optional)</label>
+          <input type="file" name="attachment" id="notif_attachment" accept=".csv,.pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.zip,.png,.jpg,.jpeg">
 
           <button type="submit" class="btn">Send Notification</button>
         </form>
@@ -382,6 +385,11 @@
               </form>
             <div class="nh-title">{{ n.title }}</div>
             <div class="nh-msg">{{ n.message }}</div>
+            {% if n.attachment_file %}
+            <div class="nh-attachment" style="margin-top:0.3rem;font-size:0.85rem;">
+              <a href="{{ url_for('download_notification_attachment', notification_id=n.id) }}" target="_blank" style="color:#2e7d32;text-decoration:underline;">[Attachment] {{ n.attachment_original_name or n.attachment_file }}</a>
+            </div>
+            {% endif %}
             <div class="nh-time">{{ n.created_at }}</div>
           </div>
           {% endfor %}

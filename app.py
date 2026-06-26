@@ -98,6 +98,14 @@ UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+NOTIF_UPLOAD_FOLDER = os.path.join('static', 'uploads', 'notifications')
+os.makedirs(NOTIF_UPLOAD_FOLDER, exist_ok=True)
+
+NOTIF_ALLOWED_EXTENSIONS = {"csv", "pdf", "ppt", "pptx", "doc", "docx", "xls", "xlsx", "txt", "zip", "png", "jpg", "jpeg"}
+
+def allowed_notification_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in NOTIF_ALLOWED_EXTENSIONS
+
 @app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -712,6 +720,14 @@ def delete_notif(notif_history):
         return redirect(url_for("admin_login"))
     
     try:
+        resp = supabase.table("notifications").select("*").eq("id", notif_history).execute()
+        if resp.data:
+            n = resp.data[0]
+            attachment_file = n.get("attachment_file")
+            if attachment_file:
+                file_path = os.path.join(NOTIF_UPLOAD_FOLDER, attachment_file)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
         supabase.table("notifications").delete().eq("id", notif_history).execute()
     except Exception as e:
         print(f"Error deleting notification: {e}")
@@ -729,11 +745,21 @@ def admin_dashboard():
         msg_body = request.form.get("message", "").strip()
         if title and msg_body:
             try:
-                supabase.table("notifications").insert({
+                data = {
                     "title": title,
                     "message": msg_body,
                     "created_at": datetime.now().isoformat()
-                }).execute()
+                }
+                attachment = request.files.get("attachment")
+                if attachment and attachment.filename and allowed_notification_file(attachment.filename):
+                    original_name = secure_filename(attachment.filename)
+                    ts = datetime.now().strftime('%Y%m%d%H%M%S%f')
+                    unique_name = f"{ts}_{original_name}"
+                    save_path = os.path.join(NOTIF_UPLOAD_FOLDER, unique_name)
+                    attachment.save(save_path)
+                    data["attachment_file"] = unique_name
+                    data["attachment_original_name"] = original_name
+                supabase.table("notifications").insert(data).execute()
                 session['_notif_msg'] = ("Notification sent successfully!", "success")
             except Exception as e:
                 session['_notif_msg'] = (f"Failed to send notification: {e}", "error")
@@ -1474,11 +1500,21 @@ def send_notification():
     msg_body = request.form.get("message", "").strip()
     if title and msg_body:
         try:
-            supabase.table("notifications").insert({
+            data = {
                 "title": title,
                 "message": msg_body,
                 "created_at": datetime.now().isoformat()
-            }).execute()
+            }
+            attachment = request.files.get("attachment")
+            if attachment and attachment.filename and allowed_notification_file(attachment.filename):
+                original_name = secure_filename(attachment.filename)
+                ts = datetime.now().strftime('%Y%m%d%H%M%S%f')
+                unique_name = f"{ts}_{original_name}"
+                save_path = os.path.join(NOTIF_UPLOAD_FOLDER, unique_name)
+                attachment.save(save_path)
+                data["attachment_file"] = unique_name
+                data["attachment_original_name"] = original_name
+            supabase.table("notifications").insert(data).execute()
             flash("Notification sent successfully!", "success")
         except Exception as e:
             flash(f"Failed to send notification: {e}", "error")
@@ -1487,14 +1523,46 @@ def send_notification():
     return redirect(url_for("admin_dashboard"))
 
 
+@app.route("/notifications")
+def notifications_page():
+    if "user_role" not in session:
+        return redirect(url_for('login'))
+    return render_template("notifications.html")
+
+
+@app.route("/api/notifications/<int:notification_id>/download")
+def download_notification_attachment(notification_id):
+    try:
+        resp = supabase.table("notifications").select("*").eq("id", notification_id).execute()
+        if not resp.data:
+            return jsonify({"error": "Notification not found"}), 404
+        n = resp.data[0]
+        attachment_file = n.get("attachment_file")
+        attachment_original_name = n.get("attachment_original_name")
+        if not attachment_file:
+            return jsonify({"error": "No attachment"}), 404
+        file_path = os.path.join(NOTIF_UPLOAD_FOLDER, attachment_file)
+        if not os.path.exists(file_path):
+            return jsonify({"error": "File not found"}), 404
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=attachment_original_name or attachment_file
+        )
+    except Exception as e:
+        print(f"Error downloading attachment: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/notifications")
 def get_notifications():
     group_id = session.get("group_id")
     try:
         notif_response = supabase.table("notifications").select("*").execute()
         notifications = []
+        limit = request.args.get("limit", 20, type=int)
         if notif_response.data:
-            notifications = sorted(notif_response.data, key=lambda x: x.get("created_at", ""), reverse=True)[:20]
+            notifications = sorted(notif_response.data, key=lambda x: x.get("created_at", ""), reverse=True)[:limit]
 
         if group_id:
             reads_response = supabase.table("notification_reads").select("notification_id").eq("group_id", group_id).execute()

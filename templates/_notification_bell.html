@@ -1,35 +1,20 @@
-<div class="notif-wrapper" id="notifWrapper">
-  <button class="notif-bell" id="notifBell" aria-label="Notifications">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-    </svg>
-    <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
-  </button>
-  <div class="notif-dropdown" id="notifDropdown">
-    <div class="notif-dropdown-header">Notifications</div>
-    <div id="notifList">
-      <div class="notif-empty">Click the bell to load notifications.</div>
-    </div>
-  </div>
-</div>
+<a class="notif-link" id="notifLink" href="/notifications" aria-label="Notifications">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+  </svg>
+  <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+</a>
 
 <script>
 (function() {
-  var bell = document.getElementById('notifBell');
-  var dropdown = document.getElementById('notifDropdown');
   var badge = document.getElementById('notifBadge');
-  var list = document.getElementById('notifList');
   var localReadKey = 'ecofield_read_notifications';
 
-  if (!bell || !dropdown || !badge || !list) {
-    console.warn('Notif: elements not found');
-    return;
-  }
+  if (!badge) return;
 
-  function fetchNotifications() {
-    list.innerHTML = '<div class="notif-empty" style="color:#666;">Loading...</div>';
-    fetch('/api/notifications', { cache: 'no-store' })
+  function updateBadge() {
+    fetch('/api/notifications?limit=50', { cache: 'no-store' })
       .then(function(r) { return r.json(); })
       .then(function(data) {
         var notifs = data.notifications || [];
@@ -37,8 +22,7 @@
         var unread = 0;
 
         notifs.forEach(function(n) {
-          n.read = n.read || localReadIds.indexOf(String(n.id)) !== -1;
-          if (!n.read) {
+          if (!n.read && localReadIds.indexOf(String(n.id)) === -1) {
             unread++;
           }
         });
@@ -49,74 +33,8 @@
         } else {
           badge.style.display = 'none';
         }
-
-        if (notifs.length === 0) {
-          list.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
-          return;
-        }
-
-        var html = '';
-        notifs.forEach(function(n) {
-          var cls = n.read ? '' : ' unread';
-          html += '<div class="notif-item' + cls + '" data-id="' + n.id + '">';
-          html += '  <div class="notif-item-title">' + escapeHtml(n.title) + '</div>';
-          html += '  <div class="notif-item-msg">' + escapeHtml(n.message) + '</div>';
-          html += '  <div class="notif-item-footer">';
-          html += '    <span class="notif-item-time">' + (n.created_at || '') + '</span>';
-          if (!n.read) {
-            html += '    <button type="button" class="notif-read-btn" data-id="' + n.id + '">Mark as read</button>';
-          }
-          html += '  </div>';
-          html += '</div>';
-        });
-        list.innerHTML = html;
-
-        list.querySelectorAll('.notif-read-btn').forEach(function(button) {
-          button.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var id = this.getAttribute('data-id');
-            var item = this.closest('.notif-item');
-            markRead(id, item, this);
-          });
-        });
       })
-      .catch(function() {
-        list.innerHTML = '<div class="notif-error">Could not load notifications.</div>';
-      });
-  }
-
-  function markRead(id, item, button) {
-    if (button) {
-      button.disabled = true;
-      button.textContent = 'Saving...';
-    }
-
-    fetch('/api/notifications/' + id + '/read', { method: 'POST' })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success) {
-          saveLocalReadId(id);
-          item.classList.remove('unread');
-          if (button) {
-            button.remove();
-          }
-          updateBadge();
-          return;
-        }
-        markReadLocally(id, item, button);
-      })
-      .catch(function() {
-        markReadLocally(id, item, button);
-      });
-  }
-
-  function markReadLocally(id, item, button) {
-    saveLocalReadId(id);
-    item.classList.remove('unread');
-    if (button) {
-      button.remove();
-    }
-    updateBadge();
+      .catch(function() {});
   }
 
   function getLocalReadIds() {
@@ -127,52 +45,6 @@
     }
   }
 
-  function saveLocalReadId(id) {
-    var readIds = getLocalReadIds();
-    var idText = String(id);
-
-    if (readIds.indexOf(idText) === -1) {
-      readIds.push(idText);
-      localStorage.setItem(localReadKey, JSON.stringify(readIds));
-    }
-  }
-
-  function updateBadge() {
-    var unread = list.querySelectorAll('.notif-item.unread').length;
-    if (unread > 0) {
-      badge.textContent = unread;
-      badge.style.display = 'flex';
-    } else {
-      badge.style.display = 'none';
-    }
-  }
-
-  function escapeHtml(text) {
-    var d = document.createElement('div');
-    d.textContent = text;
-    return d.innerHTML;
-  }
-
-  bell.addEventListener('click', function(e) {
-    e.stopPropagation();
-    var isOpen = dropdown.classList.contains('open');
-    if (!isOpen) {
-      fetchNotifications();
-    } else {
-      dropdown.classList.remove('open');
-      return;
-    }
-    dropdown.classList.add('open');
-  });
-
-  document.addEventListener('click', function() {
-    dropdown.classList.remove('open');
-  });
-
-  dropdown.addEventListener('click', function(e) {
-    e.stopPropagation();
-  });
-
-  fetchNotifications();
+  updateBadge();
 })();
 </script>

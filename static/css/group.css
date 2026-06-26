@@ -366,31 +366,23 @@ footer {
 }
 
 /* ===== NOTIFICATION BELL ===== */
-.notif-wrapper {
-  position: relative;
+.notif-link {
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
-}
-
-.notif-bell {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.1rem 0.6rem;
-  display: flex;
-  align-items: center;
   position: relative;
+  padding: 0.1rem 0.6rem;
   color: #2e7d32;
   border-radius: 6px;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
-.notif-bell:hover {
+.notif-link:hover {
   background-color: #e8f5e9;
   color: #1b5e20;
 }
 
-.notif-bell svg {
+.notif-link svg {
   width: 22px;
   height: 22px;
 }

@@ -60,7 +60,9 @@ CREATE TABLE IF NOT EXISTS notifications (
   title TEXT NOT NULL,
   message TEXT NOT NULL,
   created_at TEXT,
-  created_at_ts TIMESTAMPTZ DEFAULT NOW()
+  created_at_ts TIMESTAMPTZ DEFAULT NOW(),
+  attachment_file TEXT,
+  attachment_original_name TEXT
 );
 
 -- 5. notification_reads: tracks read status per group

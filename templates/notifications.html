@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="/static/images/icon-192x192.png">
+  <title>Notifications &bull; EcoField Logger</title>
+  <style>
+    .notif-page {
+      max-width: 700px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    .notif-page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e8f5e9;
+    }
+    .notif-page-header h1 {
+      font-size: 1.4rem;
+      color: #1b5e20;
+      margin: 0;
+    }
+    .notif-page-header .notif-back-link {
+      color: #2e7d32;
+      text-decoration: none;
+      font-size: 0.9rem;
+      padding: 0.4rem 0.8rem;
+      border: 1px solid #2e7d32;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .notif-page-header .notif-back-link:hover {
+      background: #e8f5e9;
+    }
+    .notif-page .notif-item {
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      border: 1px solid #f0f0f0;
+      border-bottom: 1px solid #e8e8e8;
+    }
+    .notif-page .notif-item.unread {
+      border-left: 3px solid #2e7d32;
+      border-color: #e8f5e9;
+      border-left-color: #2e7d32;
+    }
+    .notif-page .notif-loading {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #999;
+    }
+    .notif-page-footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #999;
+      font-size: 0.85rem;
+    }
+    @media (max-width: 640px) {
+      .notif-page {
+        margin: 1rem auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      {% if session.get('user_role') == 'student' %}
+      <h2 class="user">STUDENT USER</h2>
+      {% endif %}
+      {% if session.get('user_role') == 'admin' %}
+      <h2 class="user">ADMIN USER</h2>
+      {% endif %}
+      <div class="nav-links">
+        <a href="/home">Home</a>
+        <a href="/group">Data</a>
+        <a href="/notifications" class="active">Notifications</a>
+        {% if session.get('user_role') == 'student' %}
+        <a href="/logout" class="btn-logout">Logout</a>
+        {% endif %}
+        {% if session.get('user_role') == 'admin' %}
+        <a href="/admin/logout" class="btn-logout">Logout</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <div class="notif-page">
+    <div class="notif-page-header">
+      <h1>Notifications</h1>
+      <a href="javascript:history.back()" class="notif-back-link">&larr; Back</a>
+    </div>
+    <div id="notifList">
+      <div class="notif-loading">Loading notifications...</div>
+    </div>
+    <div class="notif-page-footer">End of notifications</div>
+  </div>
+
+  <script>
+    (function() {
+      var list = document.getElementById('notifList');
+      var localReadKey = 'ecofield_read_notifications';
+
+      if (!list) return;
+
+      function fetchNotifications() {
+        list.innerHTML = '<div class="notif-loading">Loading notifications...</div>';
+        fetch('/api/notifications?limit=200', { cache: 'no-store' })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            var notifs = data.notifications || [];
+            var localReadIds = getLocalReadIds();
+
+            notifs.forEach(function(n) {
+              n.read = n.read || localReadIds.indexOf(String(n.id)) !== -1;
+            });
+
+            if (notifs.length === 0) {
+              list.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
+              return;
+            }
+
+            var html = '';
+            notifs.forEach(function(n) {
+              var cls = n.read ? '' : ' unread';
+              html += '<div class="notif-item' + cls + '" data-id="' + n.id + '">';
+              html += '  <div class="notif-item-title">' + escapeHtml(n.title) + '</div>';
+              html += '  <div class="notif-item-msg">' + escapeHtml(n.message) + '</div>';
+              if (n.attachment_file) {
+                html += '  <div style="margin-top:0.4rem;font-size:0.85rem;">';
+                html += '    <a href="/api/notifications/' + n.id + '/download" target="_blank" style="color:#2e7d32;text-decoration:underline;">[Attachment] ' + escapeHtml(n.attachment_original_name || n.attachment_file) + '</a>';
+                html += '  </div>';
+              }
+              html += '  <div class="notif-item-footer">';
+              html += '    <span class="notif-item-time">' + (n.created_at || '') + '</span>';
+              if (!n.read) {
+                html += '    <button type="button" class="notif-read-btn" data-id="' + n.id + '">Mark as read</button>';
+              }
+              html += '  </div>';
+              html += '</div>';
+            });
+            list.innerHTML = html;
+
+            list.querySelectorAll('.notif-read-btn').forEach(function(button) {
+              button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var id = this.getAttribute('data-id');
+                var item = this.closest('.notif-item');
+                markRead(id, item, this);
+              });
+            });
+          })
+          .catch(function() {
+            list.innerHTML = '<div class="notif-error">Could not load notifications. <button onclick="location.reload()" style="background:none;border:1px solid #2e7d32;border-radius:6px;padding:0.25rem 0.5rem;cursor:pointer;color:#2e7d32;margin-left:0.5rem;">Retry</button></div>';
+          });
+      }
+
+      function markRead(id, item, button) {
+        if (button) {
+          button.disabled = true;
+          button.textContent = 'Saving...';
+        }
+
+        fetch('/api/notifications/' + id + '/read', { method: 'POST' })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.success) {
+              saveLocalReadId(id);
+              item.classList.remove('unread');
+              if (button) button.remove();
+              updateBadge();
+              return;
+            }
+            markReadLocally(id, item, button);
+          })
+          .catch(function() {
+            markReadLocally(id, item, button);
+          });
+      }
+
+      function markReadLocally(id, item, button) {
+        saveLocalReadId(id);
+        item.classList.remove('unread');
+        if (button) button.remove();
+        updateBadge();
+      }
+
+      function getLocalReadIds() {
+        try {
+          return JSON.parse(localStorage.getItem(localReadKey) || '[]');
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function saveLocalReadId(id) {
+        var readIds = getLocalReadIds();
+        var idText = String(id);
+        if (readIds.indexOf(idText) === -1) {
+          readIds.push(idText);
+          localStorage.setItem(localReadKey, JSON.stringify(readIds));
+        }
+      }
+
+      function updateBadge() {
+        var unread = list.querySelectorAll('.notif-item.unread').length;
+        var badge = window.parent.document.getElementById('notifBadge');
+        if (badge) {
+          if (unread > 0) {
+            badge.textContent = unread;
+            badge.style.display = 'flex';
+          } else {
+            badge.style.display = 'none';
+          }
+        }
+      }
+
+      function escapeHtml(text) {
+        var d = document.createElement('div');
+        d.textContent = text;
+        return d.innerHTML;
+      }
+
+      fetchNotifications();
+    })();
+  </script>
+</body>
+</html>
