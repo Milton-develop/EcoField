@@ -476,6 +476,11 @@ footer {
     padding: 0.35rem 0;
   }
 
+  .nav-links .notif-link {
+    flex: none;
+    padding: 0.1rem 0.5rem;
+  }
+
   #preview-container{
     display: flex; 
     flex-wrap: wrap; 
@@ -1183,6 +1188,10 @@ div .manual_input{
 .notif-link:hover {
   background-color: #e8f5e9;
   color: #1b5e20;
+}
+
+.nav-links .notif-link {
+  padding: 0.1rem 0.6rem;
 }
 
 .notif-link svg {

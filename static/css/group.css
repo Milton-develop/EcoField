@@ -382,6 +382,10 @@ footer {
   color: #1b5e20;
 }
 
+.nav-links .notif-link {
+  padding: 0.1rem 0.6rem;
+}
+
 .notif-link svg {
   width: 22px;
   height: 22px;

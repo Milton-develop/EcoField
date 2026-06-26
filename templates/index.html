@@ -28,9 +28,9 @@
         <a href="/admin/view_archive">Admin</a>
         {%endif%}
         <a href="/help">Help</a>
-       {% if session.get('user_role')=='student'%}
-        {% include '_notification_bell.html' %}
-        {%endif%}
+        {% if session.get('user_role')=='student'%}
+         {% include '_notification_bell.html' %}
+         {%endif%}
         <!-- Add to your navbar or index.html -->
 <a id="install-btn" style="display:none; background:none;" class="gps-btn">
   Install
@@ -125,6 +125,7 @@
       document.querySelector('.nav-container')?.appendChild(userEl);
     }
   })();
+
 </script>
 </body>
 </html>
