@@ -14,6 +14,7 @@ from cryptography.fernet import Fernet
 import base64
 import hashlib
 import json
+import mimetypes
 
 # Load environment variables
 load_dotenv()
@@ -397,7 +398,8 @@ def download_group():
     return send_file(
         io.BytesIO(output.getvalue().encode()),
         as_attachment=True,
-        download_name=f"{session['group_id']}_{get_current_academic_year()}.csv"
+        download_name=f"{session['group_id']}_{get_current_academic_year()}.csv",
+        mimetype="text/csv"
     )
 
 
@@ -1015,7 +1017,8 @@ def download_archive(archive_id):
         return send_file(
             io.BytesIO(output.getvalue().encode()),
             as_attachment=True,
-            download_name=archive.get("filename", "archive.csv")
+            download_name=archive.get("filename", "archive.csv"),
+            mimetype="text/csv"
         )
     except Exception as e:
         print(f"Error downloading archive: {e}")
@@ -1030,7 +1033,7 @@ def download_archive_file(filename):
 
     path = os.path.join(ARCHIVE_FOLDER, secure_filename(filename))
     if os.path.isfile(path):
-        return send_file(path, as_attachment=True)
+        return send_file(path, as_attachment=True, mimetype="text/csv")
     return "File not found", 404
 
 # ------------------------- DELETE ARCHIVE FILE (Supabase) -------------------------
@@ -1548,10 +1551,12 @@ def download_notification_attachment(notification_id):
         file_path = os.path.join(NOTIF_UPLOAD_FOLDER, attachment_file)
         if not os.path.exists(file_path):
             return jsonify({"error": "File not found"}), 404
+        mime = mimetypes.guess_type(attachment_original_name or attachment_file)[0] or "application/octet-stream"
         return send_file(
             file_path,
             as_attachment=True,
-            download_name=attachment_original_name or attachment_file
+            download_name=attachment_original_name or attachment_file,
+            mimetype=mime
         )
     except Exception as e:
         print(f"Error downloading attachment: {e}")

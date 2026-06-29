@@ -133,7 +133,8 @@
               html += '  <div class="notif-item-msg">' + escapeHtml(n.message) + '</div>';
               if (n.attachment_file) {
                 html += '  <div style="margin-top:0.4rem;font-size:0.85rem;">';
-                html += '    <a href="/api/notifications/' + n.id + '/download" target="_blank" style="color:#2e7d32;text-decoration:underline;">[Attachment] ' + escapeHtml(n.attachment_original_name || n.attachment_file) + '</a>';
+                html += '    <a href="/api/notifications/' + n.id + '/download" target="_self" style="color:#2e7d32;text-decoration:underline;">[Attachment] ' 
+                + escapeHtml(n.attachment_original_name || n.attachment_file) + '</a>';
                 html += '  </div>';
               }
               html += '  <div class="notif-item-footer">';
