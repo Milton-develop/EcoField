@@ -47,7 +47,7 @@ def add_no_cache(response):
 
 @app.context_processor
 def inject_cache_bust():
-    return {'cache_bust': '3'}
+    return {'cache_bust': '4'}
 
 PWD_DELIM = "||"
 

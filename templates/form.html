@@ -491,7 +491,7 @@ groupSelect.addEventListener('change', function() {
 
 let ecoData = {};
 
-fetch('/static/data.json')
+fetch('/static/data.json?v={{ cache_bust }}')
     .then(response => response.json())
     .then(data => {
         ecoData = data;
