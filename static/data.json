@@ -142,6 +142,18 @@
   { "name": "Brown Dog Tick", "scientific": "Rhipicephalus sanguineus", "type": "Ectoparasite", "habitat": "External" },
   { "name": "Fish Tapeworm", "scientific": "Diphyllobothrium latum", "type": "Endoparasite", "habitat": "Intestinal" }
 ], 
+"Herpetofauna":[
+   {"name": "Savanna puddle frog", "scientific": "Phrynobatrachus latifrons"},
+   {"name": "Broad-banded grassland frog", "scientific": "Ptychadena bibroni"},
+   {"name": "Savannah tree frog", "scientific": "Leptopelis viridis"},
+   {"name": "Flat-backed toad", "scientific": "Sclerophrys maculata"},
+   {"name": "Grassland frog", "scientific": "Ptychadena sp."},
+   {"name": "Marsh terrapin", "scientific": "Pelomedusa subrufa"},
+   {"name": "Nile monitor", "scientific": "Varanus niloticus"},
+   {"name": "Savannah monitor", "scientific": "Varanus exanthematicus"},
+   {"name": "African rock python", "scientific": "Python sebae"},
+   {"name": "Elegant sand racer", "scientific": "Psammophis elegans"}
+],
   "Water": [
   { "name": "Crowned Bullfrog", "scientific": "Hoplobatrachus occipitalis", "type": "Amphibian", "status": "Resident" },
   { "name": "Nile Monitor", "scientific": "Varanus niloticus", "type": "Reptile", "status": "Semiaquatic" },

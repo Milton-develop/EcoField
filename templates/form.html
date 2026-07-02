@@ -35,7 +35,7 @@
       
       <p class="table-legend">
       <strong style="color: red;">Note:</strong> 
-      Header tags marked with a <strong style='color:red;'>Red</strong> background indicate that field is important before data will
+      Header tags marked with a <strong style='color:red;'>Red</strong> background or asterisk indicate that field is important before data will
       be submitted or accepted. If marked with <strong style="color: #2e7d32">Green</strong> it indicates that field has some exceptions and 
       some entries can be skipped if the researcher does not have those entries
      </p>
@@ -228,9 +228,8 @@
       <br>
       <label>Survey Method</label>
       <br>
-      <select class="input" id="species_method" title="species_method">
-        <option value="">-- Select Survey Method --</option>
-      </select>
+      <input class="input" id="species_method" list="species_method_list" placeholder="-- Select or type survey method --">
+      <datalist id="species_method_list"></datalist>
       <br>
     </div>
   </div>
@@ -264,9 +263,8 @@
         <br>
         <label>Survey Method</label>
         <br>
-        <select class="input" id="new_species_method" title="new_species_method">
-          <option value="">-- Select Survey Method --</option>
-        </select>
+        <input class="input" id="new_species_method" list="new_species_method_list" placeholder="-- Select or type survey method --">
+        <datalist id="new_species_method_list"></datalist>
         <br>
       </div>
     </div>
@@ -537,23 +535,23 @@ function updateSpeciesOptions(targetSelect = null) {
 function updateSurveyMethods() {
     const location = document.getElementById('site_location').value;
     const survey = document.getElementById('survey').value;
-    const methodSelectors = ['species_method', 'new_species_method'];
+    const methodPairs = [
+        { input: 'species_method', datalist: 'species_method_list' },
+        { input: 'new_species_method', datalist: 'new_species_method_list' }
+    ];
 
-    methodSelectors.forEach(id => {
-        const methodSelect = document.getElementById(id);
-        if (!methodSelect) return;
+    methodPairs.forEach(({ input, datalist }) => {
+        const list = document.getElementById(datalist);
+        if (!list) return;
 
-        methodSelect.innerHTML = '<option value="">-- Select Survey Method --</option>';
+        list.innerHTML = '';
 
         if (ecoData[location] && ecoData[location].methods && ecoData[location].methods[survey]) {
             ecoData[location].methods[survey].forEach(method => {
                 const option = document.createElement('option');
                 option.value = method;
-                option.textContent = method;
-                methodSelect.appendChild(option);
+                list.appendChild(option);
             });
-        } else {
-            methodSelect.innerHTML = '<option value="">No methods available for this selection</option>';
         }
     });
 }
@@ -621,9 +619,8 @@ function resetNewSpeciesContainer() {
             <br>
             <label>Survey Method</label>
             <br>
-            <select class="input" id="new_species_method" title="new_species_method">
-              <option value="">-- Select Survey Method --</option>
-            </select>
+            <input class="input" id="new_species_method" list="new_species_method_list" placeholder="-- Select or type survey method --">
+            <datalist id="new_species_method_list"></datalist>
             <hr>
         </div>
     `;
@@ -634,7 +631,7 @@ function resetNewSpeciesContainer() {
 function addSpecies() {
     const speciesSelect = document.getElementById('species');
     const countInput = document.getElementById('count');
-    const methodSelect = document.getElementById('species_method');
+    const methodInput = document.getElementById('species_method');
     const container = document.getElementById('species-saved-entries');
 
     if (!speciesSelect || !countInput || !container) return;
@@ -642,7 +639,7 @@ function addSpecies() {
     const speciesText = speciesSelect.options[speciesSelect.selectedIndex].text;
     const speciesValue = speciesSelect.value;
     const countValue = countInput.value;
-    const methodValue = methodSelect ? methodSelect.value : '';
+    const methodValue = methodInput ? methodInput.value.trim() : '';
 
     if (!speciesValue || speciesValue === '') {
         alert('Please select a species before adding.');
@@ -653,7 +650,7 @@ function addSpecies() {
         return;
     }
     if (!methodValue) {
-        alert('Please select a survey method before adding.');
+        alert('Please select or enter a survey method before adding.');
         return;
     }
 
@@ -691,7 +688,7 @@ for (const entry of existingEntries) {
 
         speciesSelect.selectedIndex = 0;
         countInput.value = '';
-        if (methodSelect) methodSelect.selectedIndex = 0;
+        if (methodInput) methodInput.value = '';
 
         alert(
             'Species already exists. Count updated.'
@@ -730,13 +727,13 @@ for (const entry of existingEntries) {
     // Reset the ORIGINAL form fields only
     speciesSelect.selectedIndex = 0;
     countInput.value = '';
-    if (methodSelect) methodSelect.selectedIndex = 0;
+    if (methodInput) methodInput.value = '';
 }
 
 function addNewSpecies() {
     const newSpeciesInput = document.getElementById('new_species');
     const newCountInput = document.getElementById('new_count');
-    const newMethodSelect = document.getElementById('new_species_method');
+    const newMethodInput = document.getElementById('new_species_method');
     const savedList = document.getElementById('new-species-saved-entries');
 
     if (!newSpeciesInput || !newCountInput || !savedList) {
@@ -750,14 +747,14 @@ function addNewSpecies() {
 
     const newSpeciesName = newSpeciesInput.value.trim();
     const newCountValue = newCountInput.value.trim();
-    const newMethodValue = newMethodSelect ? newMethodSelect.value : '';
+    const newMethodValue = newMethodInput ? newMethodInput.value.trim() : '';
 
     if (!newSpeciesName || !newCountValue || parseInt(newCountValue) < 1) {
         alert('Please enter new species name and valid count first');
         return;
     }
     if (!newMethodValue) {
-        alert('Please select a survey method before adding.');
+        alert('Please select or enter a survey method before adding.');
         return;
     }
 
@@ -790,7 +787,7 @@ function addNewSpecies() {
     // Reset inputs
     newSpeciesInput.value = '';
     newCountInput.value = '';
-    if (newMethodSelect) newMethodSelect.selectedIndex = 0;
+    if (newMethodInput) newMethodInput.value = '';
 }
 
 // Universal remove function
