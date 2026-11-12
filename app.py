@@ -34,8 +34,19 @@ supabase: Client = create_client(NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+# iPhone photos default to HEIC/HEIF. Include them for AI identification only.
+AI_ALLOWED_EXTENSIONS = ALLOWED_EXTENSIONS | {"heic", "heif"}
+
+def allowed_file(filename, extensions=None):
+    allowed = extensions or ALLOWED_EXTENSIONS
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in allowed
+
+# Enable Pillow to decode HEIC/HEIF uploads from iPhones. Optional dependency.
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except Exception:
+    pass
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallback-secret-key-replace-me")
@@ -2727,11 +2738,11 @@ def api_ai_identify():
     if not file or not file.filename:
         return jsonify({"error": "Please upload a photo first."}), 400
 
-    if not allowed_file(file.filename):
+    if not allowed_file(file.filename, AI_ALLOWED_EXTENSIONS):
         return jsonify({
             "error": (
                 "Unsupported file type. "
-                "Use PNG, JPG, JPEG, GIF or WEBP."
+                "Use PNG, JPG, JPEG, GIF, WEBP, HEIC or HEIF."
             )
         }), 400
 

@@ -18,3 +18,7 @@ bcrypt
 
 # --- PDF Parsing for Bulk Group Import ---
 pypdf
+
+# --- Image Processing (incl. HEIC/HEIF from iPhones) ---
+Pillow
+pillow-heif

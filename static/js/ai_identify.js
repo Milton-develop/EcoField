@@ -13,18 +13,64 @@
 
   var selectedFile = null;
 
+  function convertToJpeg(file) {
+    // iPhones upload photos as HEIC/HEIF, which some browsers and the AI
+    // service reject. Re-encode anything that is not already web-safe into
+    // a resized JPEG so the upload always succeeds.
+    var safeTypes = { 'image/jpeg': 1, 'image/png': 1, 'image/webp': 1, 'image/gif': 1 };
+    if (safeTypes[file.type] && file.size <= 4 * 1024 * 1024) {
+      return Promise.resolve(file);
+    }
+
+    return new Promise(function(resolve) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var img = new Image();
+        img.onload = function() {
+          try {
+            var canvas = document.createElement('canvas');
+            var MAX = 1024;
+            var scale = Math.min(1, MAX / Math.max(img.width, img.height));
+            canvas.width = Math.round(img.width * scale) || img.width;
+            canvas.height = Math.round(img.height * scale) || img.height;
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(function(blob) {
+              if (blob) {
+                var name = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
+                resolve(new File([blob], name, { type: 'image/jpeg' }));
+              } else {
+                resolve(file);
+              }
+            }, 'image/jpeg', 0.85);
+          } catch (err) {
+            resolve(file);
+          }
+        };
+        img.onerror = function() { resolve(file); };
+        img.src = e.target.result;
+      };
+      reader.onerror = function() { resolve(file); };
+      reader.readAsDataURL(file);
+    });
+  }
+
   fileBtn.addEventListener('click', function() { fileInput.click(); });
   fileInput.addEventListener('change', function() {
     if (fileInput.files && fileInput.files.length > 0) {
-      selectedFile = fileInput.files[0];
-      fileName.textContent = selectedFile.name;
-      previewImg.src = URL.createObjectURL(selectedFile);
+      var original = fileInput.files[0];
+      fileName.textContent = original.name;
+      previewImg.src = URL.createObjectURL(original);
       preview.hidden = false;
       errorBox.hidden = true;
       errorBox.textContent = '';
-      if (analyzeBtn.dataset.aiAvailable === 'true') {
-        analyzeBtn.disabled = false;
-      }
+      selectedFile = null;
+      analyzeBtn.disabled = true;
+      convertToJpeg(original).then(function(file) {
+        selectedFile = file;
+        if (analyzeBtn.dataset.aiAvailable === 'true') {
+          analyzeBtn.disabled = false;
+        }
+      });
     }
   });
 
