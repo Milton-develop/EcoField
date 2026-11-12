@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_groups.css') }}?v={{ cache_bust }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_bust }}">
+  <link rel="icon" type="image/png" href="/static/images/icon-192x192.png">
+  <title>Platform Projects - Admin</title>
+  <style>
+    .status-badge {
+      display: inline-block;
+      padding: 3px 3px;
+      border-radius: 12px;
+      font-size: 0.5rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      width: 60px;
+      text-align: center;
+    }
+    .status-upcoming { background: #e3f2fd; color: #0d47a1; }
+    .status-in_progress, .status-active { background: #d4edda; color: #155724; }
+    .status-completed { background: #e8f5e9; color: #2e7d32; }
+    .status-planned { background: #f3e5f5; color: #6a1b9a; }
+    .status-paused { background: #fff3cd; color: #856404; }
+    .project-title { font-weight: 600; color: #1b5e20; }
+    .project-org {
+      font-size: 0.85rem;
+      color: #555;
+    }
+    .project-desc {
+      font-size: 0.85rem;
+      color: #555;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .project-meta {
+      font-size: 0.8rem;
+      color: #888;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .action-btn {
+      border: none;
+      padding: 5px 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: white;
+    }
+    .btn-edit { 
+      background: #1565c0; 
+    }
+    .btn-edit:hover { background: #0d47a1; }
+    .btn-delete { 
+      background: #c62828; 
+    }
+    .btn-delete:hover { 
+      background: #8e0000; 
+      border: none;
+      color: white;
+    }
+    .featured-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      background: #ff9800;
+      color: white;
+      text-transform: uppercase;
+      margin-left: 10px;
+      margin-bottom: 5px
+    }
+    @media (max-width: 768px) {
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0 1rem !important;
+        margin-bottom: 1rem;
+      }
+      .project-desc {
+        max-width: 200px;
+      }
+      td[data-label="Action"] > div {
+        min-width: 140px;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% set active_sidebar = 'projects' %}
+
+  <div class="admin-layout">
+    {% include '_admin_sidebar.html' %}
+
+    <div class="admin-content">
+      <div class="head">
+        <h1 class="text">Platform Projects</h1>
+        <p>Manage projects shown on the public Projects page</p>
+      </div>
+
+      <div class="toolbar" style="padding: 0 2rem;">
+        <p style="margin:0; color:#666;">
+          {% if projects %}
+            <strong>{{ projects|length }}</strong> project{{ '' if projects|length == 1 else 's' }}
+          {% endif %}
+        </p>
+        <a href="{{ url_for('admin_project_new') }}" class="btn" style="margin:0; background:#2e7d32; color:white; text-decoration:none; padding:8px 16px; border-radius:6px; font-weight:600;">+ New Project</a>
+      </div>
+
+      <main>
+        {% if projects %}
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Title</th>
+                <th>Organization</th>
+                <th>Status</th>
+                <th>Date Range</th>
+                <th>Featured</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in projects %}
+              <tr>
+                <td data-label="Order" class="project-meta">{{ p.get('sort_order', 0) }}</td>
+                <td data-label="Title">
+                  <div class="project-title">{{ p.get('title', 'N/A') }}{% if p.get('is_featured') %}<span class="featured-badge">Featured</span>{% endif %}</div>
+                  <div class="project-desc" title="{{ p.get('description', '') }}">{{ p.get('description', '') }}</div>
+                </td>
+                <td data-label="Organization">{{ p.get('organization', 'N/A') }}</td>
+                <td data-label="Status">
+                  <span class="status-badge status-{{ p.get('status', 'upcoming') }}">{{ p.get('status', 'upcoming') }}</span>
+                </td>
+                <td data-label="Date Range">{{ p.get('date_range', 'N/A') }}</td>
+                <td data-label="Featured">{{ 'Yes' if p.get('is_featured') else 'No' }}</td>
+                <td data-label="Action">
+                  <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                    <a href="{{ url_for('admin_project_edit', project_id=p.id) }}" class="action-btn btn-edit" style="text-decoration:none;">Edit</a>
+                    <form action="{{ url_for('admin_project_delete', project_id=p.id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Delete this project permanently?');">
+                      <button type="submit" class="action-btn btn-delete">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:3rem; color:#999;">
+          <p style="font-size:1.2rem;">No projects yet.</p>
+          <p style="margin-bottom:1rem;">Create your first project to display on the public Projects page.</p>
+          <a href="{{ url_for('admin_project_new') }}" class="btn" style="background:#2e7d32; color:white; text-decoration:none; padding:10px 20px; border-radius:6px; font-weight:600;">+ Create First Project</a>
+        </div>
+        {% endif %}
+      </main>
+    </div>
+  </div>
+
+</body>
+</html>

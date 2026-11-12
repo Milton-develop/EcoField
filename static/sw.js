@@ -1,9 +1,14 @@
 // ── 1. CACHE CONSTANTS ─────────────────────────────────────────
-const CACHE_NAME = 'ecofield-cache-v9';
+const CACHE_NAME = 'ecofield-cache-v11';
 const urlsToCache = [
   '/',
   '/form',
+  '/ai-identify',
+  '/models',
   '/static/css/style.css',
+  '/static/css/ai_identify.css',
+  '/static/css/models.css',
+  '/static/js/ai_identify.js',
   '/static/manifest.json',
   '/static/data.json',
   '/static/images/header.jpg',

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, send_file, session, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, send_file, session, jsonify, flash, Response
 import csv
 import os
 from datetime import datetime
@@ -15,6 +15,11 @@ import base64
 import hashlib
 import json
 import mimetypes
+import uuid
+import urllib.request
+import urllib.parse
+import ssl
+from concurrent.futures import ThreadPoolExecutor
 
 # Load environment variables
 load_dotenv()
@@ -88,7 +93,7 @@ def set_admin_password(new_password):
             "setting_key": "admin_password",
             "setting_value": new_password.strip()
         }
-        supabase.table("admin_settings").upsert(data).execute()
+        supabase.table("admin_settings").update({"setting_value": new_password}).eq("setting_key", "admin_password").execute()
         return True
     except Exception as e:
         print(f"Error updating admin password in Supabase: {e}")
@@ -112,6 +117,14 @@ NOTIF_ALLOWED_EXTENSIONS = {"csv", "pdf", "ppt", "pptx", "doc", "docx", "xls", "
 
 def allowed_notification_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in NOTIF_ALLOWED_EXTENSIONS
+
+RESEARCH_UPLOAD_FOLDER = os.path.join('static', 'uploads', 'research')
+os.makedirs(RESEARCH_UPLOAD_FOLDER, exist_ok=True)
+
+RESEARCH_ALLOWED_EXTENSIONS = {"pdf", "doc", "docx", "txt", "ppt", "pptx", "xls", "xlsx", "zip", "csv"}
+
+def allowed_research_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in RESEARCH_ALLOWED_EXTENSIONS
 
 @app.route("/", methods=["GET", "POST"])
 def login():
@@ -689,7 +702,7 @@ def admin_view_groups():
                 sid = r.get("student_id", "").strip()
                 sname = r.get("student_name", "").strip()
                 if sid and sname:
-                    students.append({"student_id": sid, "student_name": sname})
+                    students.append({"id": r.get("id"), "student_id": sid, "student_name": sname})
             raw = student_rows[0].get("password", "")
             if PWD_DELIM in raw:
                 enc_part = raw.split(PWD_DELIM)[0]
@@ -721,6 +734,54 @@ def delete_group(group_id):
         print(f"Error deleting group: {e}")
 
     return redirect(url_for("admin_view_groups"))
+
+# ------------------------- ADD STUDENT TO GROUP -------------------------
+@app.route("/admin/add_student", methods=["POST"])
+def admin_add_student():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Not authenticated"}), 401
+
+    data = request.get_json() or {}
+    group_id = data.get("group_id", "").strip()
+    student_id = data.get("student_id", "").strip()
+    student_name = data.get("student_name", "").strip()
+
+    if not group_id or not student_id or not student_name:
+        return jsonify({"error": "Group ID, Student ID, and Student Name are required"}), 400
+
+    try:
+        existing = supabase.table("manage_groups").select("password").eq("group_id", group_id).limit(1).execute()
+        if not existing.data:
+            return jsonify({"error": "Group not found"}), 404
+        password = existing.data[0]["password"]
+
+        supabase.table("manage_groups").insert({
+            "group_id": group_id,
+            "password": password,
+            "student_id": student_id,
+            "student_name": student_name
+        }).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ------------------------- REMOVE STUDENT FROM GROUP -------------------------
+@app.route("/admin/remove_student", methods=["POST"])
+def admin_remove_student():
+    if not session.get("admin_logged_in"):
+        return jsonify({"error": "Not authenticated"}), 401
+
+    data = request.get_json() or {}
+    row_id = data.get("id")
+
+    if not row_id:
+        return jsonify({"error": "Student row ID is required"}), 400
+
+    try:
+        supabase.table("manage_groups").delete().eq("id", row_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/delete_notif/<notif_history>", methods=["POST"])
 def delete_notif(notif_history):
@@ -805,6 +866,7 @@ def admin_dashboard():
     new_species_set = set()
     total_observations = 0
     total_images = 0
+    entry_counts = {}
     try:
         response = supabase.table("observations").select("*").execute()
         for row in response.data:
@@ -818,22 +880,49 @@ def admin_dashboard():
             photo_str = row.get("photo_files") or ""
             if photo_str:
                 total_images += len([p for p in photo_str.split(";") if p.strip()])
+            obs_sid = (row.get("student_id") or "").strip()
+            obs_name = (row.get("member_name") or "").strip()
+            if obs_sid:
+                entry_counts[obs_sid] = entry_counts.get(obs_sid, 0) + 1
+            elif obs_name:
+                obs_key = obs_name.lower()
+                entry_counts[obs_key] = entry_counts.get(obs_key, 0) + 1
     except Exception as e:
         print(f"Error fetching observations: {e}")
 
+    student_roster = []
+    for g in groups:
+        gid = (g.get("group_id") or "").strip()
+        sid = (g.get("student_id") or "").strip()
+        sname = (g.get("student_name") or "").strip()
+        if not sid or not sname:
+            continue
+        entries = entry_counts.get(sid, 0)
+        if not entries:
+            entries = entry_counts.get(sname.lower(), 0)
+        student_roster.append({
+            "group_id": gid,
+            "student_id": sid,
+            "student_name": sname,
+            "entries": entries,
+        })
+    student_roster.sort(key=lambda s: (s["group_id"], s["student_name"]))
+
     archive_files = [a["filename"] for a in get_archives()]
 
-    sent_notifications = []
+    pending_research_count = 0
     try:
-        notif_response = supabase.table("notifications").select("*").execute()
-        all_notifs = notif_response.data or []
-        sent_notifications = sorted(all_notifs, key=lambda n: n.get("created_at", ""), reverse=True)[:50]
-        for n in sent_notifications:
-            created = n.get("created_at") or ""
-            if isinstance(created, str):
-                n["created_at"] = created[:19].replace("T", " ")
-    except Exception as e:
-        print(f"Error fetching notifications: {e}")
+        pr = supabase.table("research_posts").select("id", count="exact").eq("status", "pending").execute()
+        pending_research_count = pr.count if hasattr(pr, 'count') else 0
+    except Exception:
+        pass
+
+    projects_count = 0
+    try:
+        pc = supabase.table("platform_projects").select("id", count="exact").execute()
+        projects_count = pc.count if hasattr(pc, 'count') else 0
+    except Exception:
+        pass
 
     return render_template(
         "dashboard.html",
@@ -849,7 +938,9 @@ def admin_dashboard():
         new_species_list=sorted(new_species_set),
         archive_count=len(archive_files),
         archive_files=archive_files[:5],
-        sent_notifications=sent_notifications,
+        pending_research_count=pending_research_count,
+        projects_count=projects_count,
+        students=student_roster,
     )
 
 # ------------------------- ADMIN SETTINGS -------------------------
@@ -1126,6 +1217,194 @@ def delete_entry(entry_id):
 def profile():
     return render_template("profile.html")
 
+# ------------------------- RESEARCH -------------------------
+@app.route("/research", methods=["GET", "POST"])
+def research():
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        authors = request.form.get("authors", "").strip()
+        email = request.form.get("email", "").strip()
+        institution = request.form.get("institution", "").strip()
+        abstract = request.form.get("abstract", "").strip()
+        category = request.form.get("category", "").strip()
+
+        if not title or not authors or not abstract:
+            posts = supabase.table("research_posts").select("*").eq("status", "approved").order("created_at_ts", desc=True).execute()
+            return render_template("research.html", posts=posts.data if posts.data else [],
+                                   error="Title, authors, and abstract are required.")
+
+        document_file = None
+        document_original = None
+        if "document" in request.files:
+            file = request.files["document"]
+            if file and file.filename and allowed_research_file(file.filename):
+                document_original = secure_filename(file.filename)
+                ext = document_original.rsplit(".", 1)[1].lower()
+                unique_name = f"{uuid.uuid4().hex}.{ext}"
+                save_path = os.path.join(RESEARCH_UPLOAD_FOLDER, unique_name)
+                file.save(save_path)
+                document_file = unique_name
+
+        try:
+            now = datetime.now().isoformat()
+            insert_data = {
+                "title": title,
+                "authors": authors,
+                "email": email,
+                "institution": institution,
+                "abstract": abstract,
+                "category": category,
+                "status": "pending",
+                "created_at": now
+            }
+            if document_file:
+                insert_data["document_file"] = document_file
+                insert_data["document_original_name"] = document_original
+            supabase.table("research_posts").insert(insert_data).execute()
+        except Exception as e:
+            posts = supabase.table("research_posts").select("*").eq("status", "approved").order("created_at_ts", desc=True).execute()
+            return render_template("research.html", posts=posts.data if posts.data else [],
+                                   error=f"Failed to submit: {e}")
+
+        session['_research_msg'] = "Your research has been submitted for review. It will appear here once approved by an administrator."
+        return redirect(url_for("research"))
+
+    posts = supabase.table("research_posts").select("*").eq("status", "approved").order("created_at_ts", desc=True).execute()
+
+    success_msg = session.pop('_research_msg', None)
+
+    return render_template("research.html", posts=posts.data if posts.data else [],
+                           success_msg=success_msg)
+
+@app.route("/research/download/<int:post_id>")
+def research_download(post_id):
+    result = supabase.table("research_posts").select("*").eq("id", post_id).execute()
+    if not result.data:
+        return "Not found", 404
+    post = result.data[0]
+    if not post.get("document_file"):
+        return "No document", 404
+    file_path = os.path.join(RESEARCH_UPLOAD_FOLDER, post["document_file"])
+    if not os.path.exists(file_path):
+        return "File not found", 404
+    original_name = post.get("document_original_name", post["document_file"])
+    return send_file(file_path, as_attachment=True, download_name=original_name)
+
+# ------------------------- EXPLORE -------------------------
+_ctx = ssl._create_unverified_context()
+_headers = {"User-Agent": "EcoFieldLogger/1.0 (educational project; contact: hello.miltonpixel@gmail.com)"}
+
+def wikipedia_search(query, limit=5):
+    try:
+        url = "https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode({
+            "action": "opensearch",
+            "search": query,
+            "limit": limit,
+            "namespace": 0,
+            "format": "json"
+        })
+        req = urllib.request.Request(url, headers=_headers)
+        with urllib.request.urlopen(req, timeout=8, context=_ctx) as resp:
+            data = json.loads(resp.read().decode())
+        results = []
+        for i in range(len(data[1])):
+            results.append({
+                "title": data[1][i],
+                "description": data[2][i] if i < len(data[2]) else "",
+                "url": data[3][i] if i < len(data[3]) else ""
+            })
+        return results
+    except Exception as e:
+        print(f"Wikipedia search error: {e}")
+        return []
+
+def wikipedia_summary(title):
+    try:
+        url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(title)}"
+        req = urllib.request.Request(url, headers=_headers)
+        with urllib.request.urlopen(req, timeout=8, context=_ctx) as resp:
+            return json.loads(resp.read().decode())
+    except Exception as e:
+        print(f"Wikipedia summary error: {e}")
+        return None
+
+@app.route("/explore")
+def explore():
+    data_path = os.path.join("static", "data.json")
+    species_data = {}
+    try:
+        if os.path.exists(data_path):
+            with open(data_path, "r", encoding="utf-8") as f:
+                species_data = json.load(f)
+    except Exception as e:
+        print(f"Error loading data.json: {e}")
+    return render_template("explore.html", species_data=json.dumps(species_data))
+
+@app.route("/api/explore/species")
+def explore_species():
+    q = request.args.get("q", "").strip()
+    if not q:
+        return jsonify({"results": []})
+    results = wikipedia_search(q)
+    species_list = []
+    for r in results:
+        summary = wikipedia_summary(r["title"])
+        if summary:
+            species_list.append({
+                "title": summary.get("title", r["title"]),
+                "description": summary.get("extract", r["description"]),
+                "thumbnail": summary.get("thumbnail", {}).get("source") if summary.get("thumbnail") else None,
+                "url": summary.get("content_urls", {}).get("desktop", {}).get("page") if summary.get("content_urls") else r["url"],
+                "type": summary.get("type", "standard")
+            })
+        else:
+            species_list.append({
+                "title": r["title"],
+                "description": r["description"],
+                "thumbnail": None,
+                "url": r["url"],
+                "type": "standard"
+            })
+    return jsonify({"results": species_list})
+
+@app.route("/api/explore/chat", methods=["POST"])
+def explore_chat():
+    data = request.get_json()
+    message = data.get("message", "").strip() if data else ""
+    if not message:
+        return jsonify({"reply": "Please ask a question about ecology, species, or conservation."})
+
+    results = wikipedia_search(message, limit=3)
+    if not results:
+        return jsonify({"reply": "I couldn't find information on that topic. Try asking about a specific species, ecological concept, or conservation topic."})
+
+    summaries = []
+    for r in results[:2]:
+        s = wikipedia_summary(r["title"])
+        if s and s.get("extract"):
+            txt = s["extract"]
+            if len(txt) > 500:
+                txt = txt[:500] + "..."
+            summaries.append(f"**{s['title']}**: {txt}")
+
+    if summaries:
+        reply = "Here's what I found:\n\n" + "\n\n".join(summaries)
+    else:
+        reply = "I found some related topics but couldn't retrieve details. Try a more specific search."
+
+    return jsonify({"reply": reply})
+
+# ------------------------- AI MODELS -------------------------
+@app.route("/models")
+def models():
+    return render_template("models.html", ai_available=bool(GEMINI_API_KEY))
+
+
+# ------------------------- ABOUT -------------------------
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
 # ------------------------- FAQ -------------------------
 @app.route("/faq")
 def faq():
@@ -1243,6 +1522,196 @@ def update_report_status(report_id, status):
 def group_logout():
     session.pop("group_id", None)
     return redirect(url_for("index"))
+
+# ------------------------- ADMIN RESEARCH MANAGEMENT -------------------------
+@app.route("/admin/research")
+def admin_research():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+
+    status_filter = request.args.get("status", "all")
+
+    try:
+        if status_filter in ("pending", "approved", "rejected"):
+            response = supabase.table("research_posts").select("*").eq("status", status_filter).order("created_at_ts", desc=True).execute()
+        else:
+            response = supabase.table("research_posts").select("*").order("created_at_ts", desc=True).execute()
+        posts = response.data or []
+    except Exception as e:
+        print(f"Error fetching research posts: {e}")
+        posts = []
+
+    pending_count = 0
+    try:
+        pc = supabase.table("research_posts").select("id", count="exact").eq("status", "pending").execute()
+        pending_count = pc.count if hasattr(pc, 'count') else 0
+    except Exception:
+        try:
+            all_posts = supabase.table("research_posts").select("*").execute()
+            pending_count = len([p for p in (all_posts.data or []) if p.get("status") == "pending"])
+        except Exception:
+            pass
+
+    return render_template("admin_research.html", posts=posts, status_filter=status_filter, pending_count=pending_count)
+
+@app.route("/admin/research/<int:post_id>/approve", methods=["POST"])
+def admin_research_approve(post_id):
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+    try:
+        supabase.table("research_posts").update({"status": "approved"}).eq("id", post_id).execute()
+    except Exception as e:
+        print(f"Error approving research: {e}")
+    return redirect(url_for("admin_research", status=request.args.get("status", "all")))
+
+@app.route("/admin/research/<int:post_id>/reject", methods=["POST"])
+def admin_research_reject(post_id):
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+    try:
+        supabase.table("research_posts").update({"status": "rejected"}).eq("id", post_id).execute()
+    except Exception as e:
+        print(f"Error rejecting research: {e}")
+    return redirect(url_for("admin_research", status=request.args.get("status", "all")))
+
+@app.route("/admin/research/<int:post_id>/delete", methods=["POST"])
+def admin_research_delete(post_id):
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+    try:
+        result = supabase.table("research_posts").select("document_file").eq("id", post_id).execute()
+        if result.data and result.data[0].get("document_file"):
+            file_path = os.path.join(RESEARCH_UPLOAD_FOLDER, result.data[0]["document_file"])
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        supabase.table("research_posts").delete().eq("id", post_id).execute()
+    except Exception as e:
+        print(f"Error deleting research: {e}")
+    return redirect(url_for("admin_research", status=request.args.get("status", "all")))
+
+# ------------------------- ADMIN PROJECTS MANAGEMENT -------------------------
+@app.route("/admin/projects")
+def admin_projects():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+    try:
+        response = supabase.table("platform_projects").select("*").order("sort_order", desc=False).order("created_at", desc=True).execute()
+        projects = response.data or []
+    except Exception as e:
+        print(f"Error fetching projects: {e}")
+        projects = []
+    return render_template("admin_projects.html", projects=projects)
+
+@app.route("/admin/projects/new", methods=["GET", "POST"])
+def admin_project_new():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        organization = request.form.get("organization", "").strip()
+        description = request.form.get("description", "").strip()
+        status = request.form.get("status", "upcoming").strip()
+        date_range = request.form.get("date_range", "").strip()
+        location = request.form.get("location", "").strip()
+        tags = request.form.get("tags", "").strip()
+        is_featured = request.form.get("is_featured") == "on"
+        sort_order = request.form.get("sort_order", 0, type=int)
+
+        if not title:
+            return render_template("admin_project_form.html", project=None, error="Title is required.")
+
+        try:
+            data = {
+                "title": title,
+                "organization": organization,
+                "description": description,
+                "status": status,
+                "date_range": date_range,
+                "location": location,
+                "tags": tags,
+                "is_featured": is_featured,
+                "sort_order": sort_order,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+            }
+            supabase.table("platform_projects").insert(data).execute()
+            return redirect(url_for("admin_projects"))
+        except Exception as e:
+            return render_template("admin_project_form.html", project=None, error=f"Failed to create project: {e}")
+
+    return render_template("admin_project_form.html", project=None)
+
+@app.route("/admin/projects/<int:project_id>/edit", methods=["GET", "POST"])
+def admin_project_edit(project_id):
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+
+    try:
+        result = supabase.table("platform_projects").select("*").eq("id", project_id).execute()
+        if not result.data:
+            return redirect(url_for("admin_projects"))
+        project = result.data[0]
+    except Exception as e:
+        print(f"Error fetching project: {e}")
+        return redirect(url_for("admin_projects"))
+
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        organization = request.form.get("organization", "").strip()
+        description = request.form.get("description", "").strip()
+        status = request.form.get("status", "upcoming").strip()
+        date_range = request.form.get("date_range", "").strip()
+        location = request.form.get("location", "").strip()
+        tags = request.form.get("tags", "").strip()
+        is_featured = request.form.get("is_featured") == "on"
+        sort_order = request.form.get("sort_order", 0, type=int)
+
+        if not title:
+            return render_template("admin_project_form.html", project=project, error="Title is required.")
+
+        try:
+            data = {
+                "title": title,
+                "organization": organization,
+                "description": description,
+                "status": status,
+                "date_range": date_range,
+                "location": location,
+                "tags": tags,
+                "is_featured": is_featured,
+                "sort_order": sort_order,
+                "updated_at": datetime.now().isoformat(),
+            }
+            supabase.table("platform_projects").update(data).eq("id", project_id).execute()
+            return redirect(url_for("admin_projects"))
+        except Exception as e:
+            project.update(data)
+            return render_template("admin_project_form.html", project=project, error=f"Failed to update project: {e}")
+
+    return render_template("admin_project_form.html", project=project)
+
+@app.route("/admin/projects/<int:project_id>/delete", methods=["POST"])
+def admin_project_delete(project_id):
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+    try:
+        supabase.table("platform_projects").delete().eq("id", project_id).execute()
+    except Exception as e:
+        print(f"Error deleting project: {e}")
+    return redirect(url_for("admin_projects"))
+
+# ------------------------- PROJECTS (PUBLIC) -------------------------
+@app.route("/projects")
+def projects():
+    upcoming_projects = []
+    try:
+        response = supabase.table("platform_projects").select("*").order("sort_order", desc=False).order("created_at", desc=True).execute()
+        upcoming_projects = response.data or []
+    except Exception as e:
+        print(f"Error fetching projects: {e}")
+    return render_template("projects.html", projects=upcoming_projects)
+
 
 @app.route('/manifest.json')
 def serve_manifest():
@@ -1532,6 +2001,28 @@ def send_notification():
     return redirect(url_for("admin_dashboard"))
 
 
+@app.route("/admin/sent_notifications")
+def admin_sent_notifications():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+
+    sent_notifications = []
+    try:
+        notif_response = supabase.table("notifications").select("*").execute()
+        all_notifs = notif_response.data or []
+        sent_notifications = sorted(all_notifs, key=lambda n: n.get("created_at") or "", reverse=True)
+        for n in sent_notifications:
+            created = n.get("created_at") or ""
+            if isinstance(created, str):
+                n["created_at"] = created[:19].replace("T", " ")
+    except Exception as e:
+        print(f"Error fetching sent notifications: {e}")
+
+    return render_template(
+        "admin_sent_notifications.html",
+        sent_notifications=sent_notifications,
+    )
+
 @app.route("/notifications")
 def notifications_page():
     if "user_role" not in session:
@@ -1612,9 +2103,1304 @@ def mark_notification_read(notification_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# ------------------------- AI IDENTIFICATION (GEMINI) -------------------------
+
+import base64 as _base64
+import io as _io
+import json
+import os
+import random as _random
+import time as _time
+
+import requests as _requests
+
+
+# ---------------------------------------------------------------------------
+# Gemini configuration
+# ---------------------------------------------------------------------------
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+
+# Use a stable model as the primary model. You can override this in .env.
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip()
+
+# Comma-separated fallback models in .env, for example:
+# GEMINI_FALLBACK_MODELS=gemini-3.5-flash,gemini-flash-latest
+#
+# Strip whitespace and remove duplicates so values such as
+# "model-a, model-b" work correctly.
+GEMINI_FALLBACK_MODELS = [
+    model.strip()
+    for model in os.getenv(
+        "GEMINI_FALLBACK_MODELS",
+        "gemini-3.5-flash,gemini-flash-latest",
+    ).split(",")
+    if model.strip()
+]
+
+GEMINI_BASE_URL = (
+    "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+)
+
+GEMINI_MAX_IMAGE_DIM = int(os.getenv("GEMINI_MAX_IMAGE_DIM", "1024"))
+
+# The flash model family spends output tokens on reasoning before emitting
+# the JSON answer, so a small budget truncates the result mid-JSON.
+GEMINI_MAX_OUTPUT_TOKENS = int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS", "8192"))
+
+# Hard ceiling for automatic budget expansion after a MAX_TOKENS truncation.
+GEMINI_MAX_OUTPUT_TOKENS_CAP = int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS_CAP", "32768"))
+
+# Number of attempts for transient errors on the same model.
+GEMINI_MAX_ATTEMPTS = int(os.getenv("GEMINI_MAX_ATTEMPTS", "3"))
+
+# Initial exponential-backoff delay in seconds.
+GEMINI_INITIAL_BACKOFF = float(os.getenv("GEMINI_INITIAL_BACKOFF", "1.0"))
+
+# Maximum delay between retries.
+GEMINI_MAX_BACKOFF = float(os.getenv("GEMINI_MAX_BACKOFF", "8.0"))
+
+# HTTP timeout for one Gemini request. Larger token budgets need more time.
+GEMINI_TIMEOUT = int(os.getenv("GEMINI_TIMEOUT", "60"))
+
+
+# ---------------------------------------------------------------------------
+# Custom errors
+# ---------------------------------------------------------------------------
+
+class GeminiTemporaryUnavailable(RuntimeError):
+    """Gemini was temporarily unavailable after retries/fallbacks."""
+
+
+class GeminiConfigurationError(RuntimeError):
+    """Gemini configuration/authentication problem."""
+
+
+class GeminiRequestError(RuntimeError):
+    """Gemini rejected the request or returned an unexpected error."""
+
+
+# ---------------------------------------------------------------------------
+# Image preparation
+# ---------------------------------------------------------------------------
+
+def _prep_image(image_bytes, mime):
+    """Downscale and re-encode an uploaded photo before sending it to Gemini.
+
+    The image is capped at GEMINI_MAX_IMAGE_DIM on its longest edge.
+    JPEG is used to keep request size reasonable while retaining useful
+    visual detail for species/habitat identification.
+    """
+    if not image_bytes:
+        return image_bytes, mime
+
+    try:
+        from PIL import Image as _Img
+
+        img = _Img.open(_io.BytesIO(image_bytes))
+        img.thumbnail(
+            (GEMINI_MAX_IMAGE_DIM, GEMINI_MAX_IMAGE_DIM),
+            _Img.LANCZOS,
+        )
+
+        # JPEG does not support transparency/paletted modes safely.
+        if img.mode not in ("RGB", "L"):
+            img = img.convert("RGB")
+
+        buf = _io.BytesIO()
+        img.save(
+            buf,
+            format="JPEG",
+            quality=82,
+            optimize=True,
+        )
+
+        return buf.getvalue(), "image/jpeg"
+
+    except Exception:
+        # If preprocessing fails, send the original image rather than
+        # turning an image-processing problem into an AI failure.
+        return image_bytes, mime
+
+
+# ---------------------------------------------------------------------------
+# Retry helpers
+# ---------------------------------------------------------------------------
+
+def _retry_delay(attempt, response=None):
+    """Calculate exponential backoff with jitter.
+
+    attempt is zero-based:
+        attempt 0 -> no delay before the first request
+        attempt 1 -> ~1 second
+        attempt 2 -> ~2 seconds
+        attempt 3 -> ~4 seconds
+        ...
+    """
+    if attempt <= 0:
+        return 0.0
+
+    # Respect Retry-After when the API provides it.
+    if response is not None:
+        retry_after = response.headers.get("Retry-After")
+        if retry_after:
+            try:
+                return min(float(retry_after), GEMINI_MAX_BACKOFF)
+            except (TypeError, ValueError):
+                pass
+
+    base = GEMINI_INITIAL_BACKOFF * (2 ** (attempt - 1))
+    base = min(base, GEMINI_MAX_BACKOFF)
+
+    # Add 0–25% jitter so simultaneous EcoField users do not all retry
+    # at exactly the same moment.
+    jitter = _random.uniform(0, base * 0.25)
+    return min(base + jitter, GEMINI_MAX_BACKOFF)
+
+
+def _model_list():
+    """Return the primary model followed by unique fallback models."""
+    models = [GEMINI_MODEL] + GEMINI_FALLBACK_MODELS
+
+    # Preserve order while removing duplicates and empty values.
+    return list(dict.fromkeys(m.strip() for m in models if m and m.strip()))
+
+
+# ---------------------------------------------------------------------------
+# Gemini request
+# ---------------------------------------------------------------------------
+
+def _gemini_generate(prompt, image_bytes=None, mime="image/jpeg"):
+    """Send a prompt/image to Gemini with retries and model fallbacks.
+
+    Important behavior:
+    - 429/5xx/503 errors are treated as potentially temporary.
+    - A transient error is retried with exponential backoff.
+    - 404 moves to the next configured model.
+    - 401/403 reports an API-key/permission problem.
+    - 400 reports a request/prompt problem.
+    - Temporary-unavailable errors are reported separately from
+      "model not available for this account".
+    """
+    if not GEMINI_API_KEY:
+        raise GeminiConfigurationError(
+            "GEMINI_API_KEY is not configured. Add it to your environment."
+        )
+
+    contents = []
+
+    if image_bytes:
+        b64_img = _base64.b64encode(image_bytes).decode("ascii")
+
+        contents = [{
+            "parts": [
+                {"text": prompt},
+                {
+                    "inline_data": {
+                        "mime_type": mime,
+                        "data": b64_img,
+                    }
+                },
+            ]
+        }]
+    else:
+        contents = [{
+            "parts": [
+                {"text": prompt},
+            ]
+        }]
+
+    models_to_try = _model_list()
+
+    # These statuses can be transient and are therefore retried.
+    retryable_statuses = {429, 500, 502, 503, 504}
+
+    last_error = None
+    saw_temporary_failure = False
+
+    # Grows when Gemini reports a MAX_TOKENS truncation so the retry has room.
+    max_output_tokens = GEMINI_MAX_OUTPUT_TOKENS
+
+    for model in models_to_try:
+        for attempt in range(GEMINI_MAX_ATTEMPTS):
+            try:
+                delay = _retry_delay(attempt)
+
+                if delay:
+                    _time.sleep(delay)
+
+                started = _time.monotonic()
+
+                resp = _requests.post(
+                    GEMINI_BASE_URL.format(model=model),
+                    params={"key": GEMINI_API_KEY},
+                    json={
+                        "contents": contents,
+                        "generationConfig": {
+                            "maxOutputTokens": max_output_tokens,
+                            "temperature": 0.4,
+                            "responseMimeType": "application/json",
+                        },
+                    },
+                    timeout=GEMINI_TIMEOUT,
+                )
+
+                elapsed = _time.monotonic() - started
+
+                # Keep useful information in server logs without exposing
+                # the API key or full response to the user.
+                print(
+                    f"[Gemini] model={model} "
+                    f"status={resp.status_code} "
+                    f"attempt={attempt + 1}/{GEMINI_MAX_ATTEMPTS} "
+                    f"time={elapsed:.2f}s"
+                )
+
+            except _requests.exceptions.RequestException as e:
+                last_error = f"{model}: network error: {e}"
+                saw_temporary_failure = True
+                print(f"[Gemini] {last_error}")
+
+                # Retry the same model unless this was the final attempt.
+                if attempt < GEMINI_MAX_ATTEMPTS - 1:
+                    continue
+
+                break
+
+            status = resp.status_code
+
+            # Success.
+            if 200 <= status < 300:
+                try:
+                    data = resp.json()
+                except ValueError:
+                    raise GeminiRequestError(
+                        "Gemini returned a response that was not valid JSON."
+                    )
+
+                candidate = (
+                    data.get("candidates", [{}])[0]
+                    if data.get("candidates")
+                    else {}
+                )
+                parts = candidate.get("content", {}).get("parts", [])
+                finish_reason = candidate.get("finishReason")
+
+                texts = [
+                    part.get("text", "")
+                    for part in parts
+                    if isinstance(part, dict) and part.get("text")
+                ]
+                joined_text = "".join(texts)
+
+                if not joined_text:
+                    # Sometimes the API can return a response without usable
+                    # candidate text (for example, a blocked/empty response).
+                    raise GeminiRequestError(
+                        "Gemini returned no usable analysis result"
+                        + (
+                            f" (finish reason: {finish_reason})."
+                            if finish_reason
+                            else "."
+                        )
+                    )
+
+                if finish_reason == "MAX_TOKENS":
+                    last_error = (
+                        f"{model}: output truncated at {max_output_tokens} "
+                        "tokens (MAX_TOKENS)"
+                    )
+                    print(f"[Gemini] {last_error}; retrying with a larger budget")
+
+                    if (
+                        attempt < GEMINI_MAX_ATTEMPTS - 1
+                        and max_output_tokens < GEMINI_MAX_OUTPUT_TOKENS_CAP
+                    ):
+                        max_output_tokens = min(
+                            max_output_tokens * 2,
+                            GEMINI_MAX_OUTPUT_TOKENS_CAP,
+                        )
+                        continue
+
+                    raise GeminiRequestError(
+                        "Gemini output was truncated (finish reason: "
+                        "MAX_TOKENS) and remained incomplete after retries."
+                    )
+
+                return joined_text
+
+            # Temporary service/rate-limit failures.
+            if status in retryable_statuses:
+                last_error = (
+                    f"{model}: HTTP {status} - {resp.text[:300]}"
+                )
+                saw_temporary_failure = True
+                print(f"[Gemini] {last_error}")
+
+                # Retry this same model. After the final attempt, move to
+                # the next configured model.
+                continue
+
+            # Model doesn't exist / isn't available through this endpoint.
+            if status == 404:
+                last_error = f"{model}: HTTP 404 - {resp.text[:300]}"
+                print(f"[Gemini] Model unavailable: {last_error}")
+                break
+
+            # Authentication/permission problem.
+            if status in {401, 403}:
+                raise GeminiConfigurationError(
+                    f"Gemini API authentication/permission error "
+                    f"(HTTP {status}). Check GEMINI_API_KEY and API access."
+                )
+
+            # Bad request: retrying the same payload won't normally fix it.
+            if status == 400:
+                raise GeminiRequestError(
+                    f"Gemini rejected the request (HTTP 400): "
+                    f"{resp.text[:500]}"
+                )
+
+            # Other unexpected response.
+            raise GeminiRequestError(
+                f"Gemini returned HTTP {status}: {resp.text[:500]}"
+            )
+
+    # Do not claim that all models are unavailable "for this account" when
+    # the actual problem was temporary service overload.
+    if saw_temporary_failure:
+        raise GeminiTemporaryUnavailable(
+            "The Gemini AI service is temporarily unavailable or "
+            "experiencing high demand. Please try again in a moment."
+            + (f" Technical detail: {last_error}" if last_error else "")
+        )
+
+    raise GeminiConfigurationError(
+        "None of the configured Gemini models could process the request."
+        + (f" Last error: {last_error}" if last_error else "")
+    )
+
+
+# ---------------------------------------------------------------------------
+# JSON extraction / repair
+# ---------------------------------------------------------------------------
+
+def _extract_json(text):
+    """Best-effort extraction of a JSON object/array from Gemini output."""
+    text = text.strip()
+    candidates = [text]
+
+    brace_start = text.find("{")
+    brace_end = text.rfind("}")
+
+    if brace_start != -1 and brace_end != -1 and brace_end > brace_start:
+        candidates.append(text[brace_start:brace_end + 1])
+        core = text[brace_start:brace_end + 1]
+    else:
+        core = None
+
+    bracket_start = text.find("[")
+    bracket_end = text.rfind("]")
+
+    for candidate in candidates:
+        try:
+            json.loads(candidate)
+            return candidate
+        except Exception:
+            continue
+
+    if core is not None:
+        repaired = _repair_truncated_json(core)
+        if repaired is not None:
+            return repaired
+
+    if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
+        brackets = text[bracket_start:bracket_end + 1]
+
+        try:
+            json.loads(brackets)
+            return brackets
+        except Exception:
+            brackets_repaired = _repair_truncated_json(brackets)
+            if brackets_repaired is not None:
+                return brackets_repaired
+
+    if core is not None:
+        return core
+
+    if bracket_start != -1 and bracket_end != -1 and bracket_end > bracket_start:
+        return text[bracket_start:bracket_end + 1]
+
+    return text
+
+
+def _repair_truncated_json(core):
+    """Try to close JSON that was truncated by the output token limit."""
+    stack = []
+    in_string = False
+    escaped = False
+
+    for ch in core:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+            continue
+
+        if ch == '"':
+            in_string = True
+        elif ch in "[{":
+            stack.append(ch)
+        elif ch in "]}" and stack:
+            stack.pop()
+
+    if not stack:
+        return None
+
+    closing = {
+        "{": "}",
+        "[": "]",
+    }
+
+    def try_load(value):
+        try:
+            json.loads(value)
+            return True
+        except Exception:
+            return False
+
+    repaired = core
+
+    while stack:
+        if try_load(repaired):
+            return repaired
+
+        repaired += closing[stack.pop()]
+
+    return repaired if try_load(repaired) else None
+
+
+# ---------------------------------------------------------------------------
+# AI prompts
+# ---------------------------------------------------------------------------
+
+def _species_prompt():
+    return (
+        "You are an expert ecologist and conservation biologist. "
+        "Analyze the attached field photograph and identify the animal or "
+        "plant species shown.\n\n"
+        "Respond ONLY with a valid JSON object in exactly this structure:\n"
+        '{"species":[{"common_name":"...","scientific_name":"...",'
+        '"confidence":0.0,"family":"...","notes":"..."}],'
+        '"summary":"..."}\n\n'
+        "Provide 1 to 3 ranked candidate species. "
+        "Confidence must be a number between 0 and 1 and represents the "
+        "model's visual assessment, not scientific certainty. "
+        "In notes, mention the key identifying traits visible in the image. "
+        "Do not invent a species when the image does not provide enough "
+        "evidence. If identification is not possible, return an empty "
+        "species array and explain why in summary."
+    )
+
+
+def _habitat_prompt():
+    return (
+        "You are an expert ecologist. Analyze the attached field photograph "
+        "and classify the visible habitat/ecosystem.\n\n"
+        "Respond ONLY with a valid JSON object in exactly this structure:\n"
+        '{"habitat_type":"...","vegetation":"...",'
+        '"soil_or_substrate":"...","climate_indicators":"...",'
+        '"confidence":0.0,"notes":"..."}\n\n'
+        "Be specific when the image supports it, for example tropical "
+        "rainforest, coastal savanna, wetland, montane forest, woodland, "
+        "grassland, or forest floor. Confidence must be between 0 and 1. "
+        "Do not claim environmental conditions that cannot reasonably be "
+        "inferred from the photograph."
+    )
+
+
+def _species_and_habitat_prompt():
+    return (
+        "You are an expert ecologist and conservation biologist. "
+        "Analyze the attached field photograph for BOTH species "
+        "identification and habitat classification.\n\n"
+        "Return ONLY one valid JSON object in exactly this structure:\n"
+        "{"
+        '"species":[{"common_name":"...","scientific_name":"...",'
+        '"confidence":0.0,"family":"...","notes":"..."}],'
+        '"species_summary":"...",'
+        '"habitat":{'
+        '"habitat_type":"...",'
+        '"vegetation":"...",'
+        '"soil_or_substrate":"...",'
+        '"climate_indicators":"...",'
+        '"confidence":0.0,'
+        '"notes":"..."'
+        "}"
+        "}\n\n"
+        "Species requirements:\n"
+        "- Provide 1 to 3 ranked candidate species.\n"
+        "- Confidence must be between 0 and 1.\n"
+        "- Confidence is the model's visual assessment, not scientific "
+        "certainty.\n"
+        "- Mention visible identifying traits in notes.\n"
+        "- Do not invent a species when the evidence is insufficient.\n"
+        "- If identification is not possible, return an empty species array "
+        "and explain why in species_summary.\n\n"
+        "Habitat requirements:\n"
+        "- Classify only what the photograph reasonably supports.\n"
+        "- Confidence must be between 0 and 1.\n"
+        "- Do not invent environmental conditions that cannot reasonably be "
+        "inferred from the image."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Analysis functions
+# ---------------------------------------------------------------------------
+
+def identify_species_from_photo(image_bytes, mime):
+    raw = _gemini_generate(
+        _species_prompt(),
+        image_bytes,
+        mime,
+    )
+    return _extract_json(raw)
+
+
+def classify_habitat_from_photo(image_bytes, mime):
+    raw = _gemini_generate(
+        _habitat_prompt(),
+        image_bytes,
+        mime,
+    )
+    return _extract_json(raw)
+
+
+def identify_species_and_habitat_from_photo(image_bytes, mime):
+    """Analyze species + habitat in ONE Gemini request."""
+    raw = _gemini_generate(
+        _species_and_habitat_prompt(),
+        image_bytes,
+        mime,
+    )
+    return _extract_json(raw)
+
+
+# ---------------------------------------------------------------------------
+# Pages / API
+# ---------------------------------------------------------------------------
+
+@app.route("/ai-identify")
+def ai_identify():
+    ai_available = bool(GEMINI_API_KEY)
+
+    return render_template(
+        "ai_identify.html",
+        ai_available=ai_available,
+        gemini_model=GEMINI_MODEL,
+    )
+
+
+@app.route("/api/ai-identify", methods=["POST"])
+def api_ai_identify():
+    if not GEMINI_API_KEY:
+        return jsonify({
+            "error": (
+                "AI identification is not configured. "
+                "Ask an administrator to set GEMINI_API_KEY."
+            )
+        }), 503
+
+    analysis_type = request.form.get("analysis_type", "both").strip().lower()
+
+    if analysis_type not in {"both", "species", "habitat"}:
+        return jsonify({
+            "error": "Invalid analysis type. Choose both, species or habitat."
+        }), 400
+
+    file = request.files.get("photo")
+
+    if not file or not file.filename:
+        return jsonify({"error": "Please upload a photo first."}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({
+            "error": (
+                "Unsupported file type. "
+                "Use PNG, JPG, JPEG, GIF or WEBP."
+            )
+        }), 400
+
+    mime = file.mimetype or (
+        "image/jpeg"
+        if file.filename.lower().endswith((".jpg", ".jpeg"))
+        else "image/png"
+    )
+
+    image_bytes = file.read()
+
+    if not image_bytes:
+        return jsonify({"error": "The uploaded image is empty."}), 400
+
+    image_bytes, mime = _prep_image(image_bytes, mime)
+
+    result = {
+        "analysis_type": analysis_type,
+        "species": None,
+        "habitat": None,
+    }
+
+    try:
+        # IMPORTANT:
+        # For "both", use ONE Gemini request instead of two simultaneous
+        # requests. This reduces load, rate-limit pressure and the chance
+        # that one half of the analysis fails while the other succeeds.
+        if analysis_type == "both":
+            raw = identify_species_and_habitat_from_photo(
+                image_bytes,
+                mime,
+            )
+
+            combined = json.loads(raw)
+
+            result["species"] = combined.get("species", [])
+            result["species_summary"] = combined.get("species_summary", "")
+            result["habitat"] = combined.get("habitat")
+
+        elif analysis_type == "species":
+            raw = identify_species_from_photo(
+                image_bytes,
+                mime,
+            )
+
+            species = json.loads(raw)
+
+            result["species"] = species.get("species", [])
+            result["species_summary"] = species.get("summary", "")
+
+        else:
+            raw = classify_habitat_from_photo(
+                image_bytes,
+                mime,
+            )
+
+            habitat = json.loads(raw)
+
+            result["habitat"] = habitat
+
+    except GeminiTemporaryUnavailable as e:
+        # 503/429/temporary network problems.
+        # Tell the frontend this is temporary instead of incorrectly saying
+        # that the user's account has no available models.
+        print(f"[Gemini temporary unavailable] {e}")
+
+        return jsonify({
+            "error": (
+                "AI analysis is temporarily unavailable because the "
+                "AI service is experiencing high demand. "
+                "Please try again in a moment."
+            ),
+            "error_type": "temporary_unavailable",
+            "retryable": True,
+        }), 503
+
+    except GeminiConfigurationError as e:
+        print(f"[Gemini configuration error] {e}")
+
+        return jsonify({
+            "error": (
+                "The AI service is not configured correctly. "
+                "Please contact an administrator."
+            ),
+            "error_type": "configuration",
+            "retryable": False,
+        }), 503
+
+    except GeminiRequestError as e:
+        print(f"[Gemini request error] {e}")
+
+        return jsonify({
+            "error": (
+                "The AI could not process this image. "
+                "Please try another clear photo."
+            ),
+            "error_type": "request_error",
+            "retryable": True,
+        }), 502
+
+    except json.JSONDecodeError:
+        print("[Gemini] Returned an unreadable JSON result.")
+
+        return jsonify({
+            "error": (
+                "The AI returned an unreadable result. "
+                "Please try again."
+            ),
+            "error_type": "invalid_ai_response",
+            "retryable": True,
+        }), 502
+
+    except Exception as e:
+        # Keep unexpected technical details in server logs, not in the UI.
+        print(f"[Gemini unexpected identification error] {e}")
+
+        return jsonify({
+            "error": (
+                "Something went wrong while analyzing the image. "
+                "Please try again."
+            ),
+            "error_type": "unexpected",
+            "retryable": True,
+        }), 500
+
+    return jsonify(result)
+
+
+
+# ------------------------- ADMIN RESEARCH REPORTS -------------------------
+
+def _report_filters(args):
+    """Extract report filter values from a request args object."""
+    return {
+        "year": args.get("year", "").strip(),
+        "group": args.get("group", "").strip(),
+        "habitat": args.get("habitat", "").strip(),
+        "survey_type": args.get("survey_type", "").strip(),
+        "date_from": args.get("date_from", "").strip(),
+        "date_to": args.get("date_to", "").strip(),
+    }
+
+
+def _apply_report_filters(records, filters):
+    f = filters
+    out = []
+    for r in records:
+        if f["year"] and r.get("academic_year", "") != f["year"]:
+            continue
+        if f["group"] and r.get("group_id", "") != f["group"]:
+            continue
+        if f["habitat"] and r.get("habitat", "") != f["habitat"]:
+            continue
+        if f["survey_type"] and r.get("survey_type", "") != f["survey_type"]:
+            continue
+        ts = str(r.get("timestamp") or "")[:10]
+        if f["date_from"] and ts and ts < f["date_from"]:
+            continue
+        if f["date_to"] and ts and ts > f["date_to"]:
+            continue
+        out.append(r)
+    return out
+
+
+def _observation_records(rows):
+    """Convert raw observation rows into tidy long records (one per species occurrence)."""
+    records = []
+    for row in rows:
+        s_list = [x.strip() for x in str(row.get("species_list") or "").split(",") if x.strip()]
+        c_list = [x.strip() for x in str(row.get("count_list") or "").split(",")]
+        m_list = [x.strip() for x in str(row.get("method_list") or "").split(",")]
+        manual_s = [x.strip() for x in str(row.get("species_manual") or "").split(",") if x.strip()]
+        manual_c = [x.strip() for x in str(row.get("count_manual") or "").split(",")]
+        manual_m = [x.strip() for x in str(row.get("method_manual") or "").split(",")]
+
+        entries = []
+        for i, sp in enumerate(s_list):
+            if sp.lower() in ("", "nan", "none", "other"):
+                continue
+            try:
+                cnt = int(float(c_list[i])) if i < len(c_list) and c_list[i] not in ("", "nan", "None") else 0
+            except (ValueError, IndexError):
+                cnt = 0
+            entries.append((sp, cnt, m_list[i] if i < len(m_list) else "", "Standard"))
+        for i, sp in enumerate(manual_s):
+            if sp.lower() in ("", "nan", "none"):
+                continue
+            try:
+                cnt = int(float(manual_c[i])) if i < len(manual_c) and manual_c[i] not in ("", "nan", "None") else 0
+            except (ValueError, IndexError):
+                cnt = 0
+            entries.append((sp, cnt, manual_m[i] if i < len(manual_m) else "", "Manual"))
+
+        if not entries:
+            continue
+
+        base = {
+            "observation_id": row.get("id") or "",
+            "timestamp": str(row.get("timestamp") or row.get("created_at") or ""),
+            "academic_year": str(row.get("year_group") or ""),
+            "group_id": str(row.get("group_id") or ""),
+            "member_name": str(row.get("member_name") or ""),
+            "student_id": str(row.get("student_id") or ""),
+            "habitat": str(row.get("habitat") or ""),
+            "location": str(row.get("location") or ""),
+            "site_location": str(row.get("site_location") or ""),
+            "latitude": str(row.get("latitude") or ""),
+            "longitude": str(row.get("longitude") or ""),
+            "survey_type": str(row.get("survey_type") or ""),
+            "temperature": str(row.get("temperature") or ""),
+            "humidity": str(row.get("humidity") or ""),
+            "rainfall": str(row.get("rainfall") or ""),
+            "wind_speed": str(row.get("wind_speed") or ""),
+            "wind_direction": str(row.get("wind_direction") or ""),
+            "light_intensity": str(row.get("light_intensity") or ""),
+            "canopy_cover": str(row.get("canopy_cover") or ""),
+            "canopy_height": str(row.get("canopy_height") or ""),
+            "notes": str(row.get("notes") or ""),
+            "photo_files": str(row.get("photo_files") or ""),
+        }
+        for sp, cnt, method, src in entries:
+            rec = dict(base)
+            rec["species"] = sp
+            rec["count"] = cnt
+            rec["method"] = method
+            rec["species_source"] = src
+            records.append(rec)
+    return records
+
+
+def _distinct_options(rows, field):
+    opts = set()
+    for r in rows:
+        val = str(r.get(field) or "").strip()
+        if val and val.lower() not in ("nan", "none"):
+            opts.add(val)
+    return sorted(opts)
+
+
+def _research_report_data(records):
+    """Compute summary statistics from tidy report records."""
+    overview = {}
+    species_summary = []
+    habitat_summary = []
+    env_summary = {}
+
+    if not records:
+        return overview, species_summary, habitat_summary, env_summary
+
+    df = pd.DataFrame(records)
+    df["count"] = pd.to_numeric(df["count"], errors="coerce").fillna(0).astype(int)
+
+    def simpson(counts):
+        N = int(counts.sum())
+        if N < 2:
+            return 0.0
+        num = sum(n * (n - 1) for n in counts)
+        return round(1 - num / (N * (N - 1)), 3)
+
+    def shannon(counts):
+        props = counts / counts.sum()
+        props = props[props > 0]
+        return round(-np.sum(props * np.log(props)), 3)
+
+    def evenness(sh, rich):
+        if rich <= 1:
+            return 0.0
+        return round(sh / np.log(rich), 3)
+
+    total_individuals = int(df["count"].sum())
+    species_richness = int(df["species"].nunique())
+    habitats = sorted(set(h for h in df["habitat"] if h))
+    groups = sorted(set(g for g in df["group_id"] if g))
+    survey_types = sorted(set(s for s in df["survey_type"] if s))
+
+    overview = {
+        "observations": int(len(df)),
+        "species_richness": species_richness,
+        "total_individuals": total_individuals,
+        "habitat_count": len(habitats),
+        "habitats": habitats,
+        "group_count": len(groups),
+        "groups": groups,
+        "survey_types": survey_types,
+        "avg_per_species": round(total_individuals / species_richness, 1) if species_richness else 0,
+    }
+
+    grp = df.groupby("species")["count"]
+    for sp, gr in grp:
+        species_summary.append({
+            "species": sp,
+            "total_count": int(gr.sum()),
+            "observations": int(gr.count()),
+        })
+    species_summary.sort(key=lambda x: x["total_count"], reverse=True)
+
+    for hab, hdf in df.groupby("habitat"):
+        if not hab:
+            continue
+        cnts = hdf["count"]
+        rich = int(hdf["species"].nunique())
+        sh = shannon(pd.to_numeric(cnts, errors="coerce").fillna(0))
+        habitat_summary.append({
+            "habitat": hab,
+            "richness": rich,
+            "total_count": int(cnts.sum()),
+            "observations": int(len(hdf)),
+            "groups": int(hdf["group_id"].nunique()),
+            "simpson": simpson(pd.to_numeric(cnts, errors="coerce").fillna(0)),
+            "shannon": sh,
+            "evenness": evenness(sh, rich),
+        })
+    habitat_summary.sort(key=lambda x: x["total_count"], reverse=True)
+
+    env_vars = ["temperature", "humidity", "rainfall", "wind_speed", "light_intensity", "canopy_cover"]
+    for hab, hdf in df.groupby("habitat"):
+        if not hab:
+            continue
+        env_summary[hab] = {}
+        for v in env_vars:
+            vals = pd.to_numeric(hdf[v], errors="coerce").dropna().astype(float)
+            env_summary[hab][v] = {
+                "mean": round(vals.mean(), 2) if len(vals) else None,
+                "std": round(vals.std(), 2) if len(vals) > 1 else None,
+            }
+
+    return overview, species_summary, habitat_summary, env_summary
+
+
+def _load_report_records(filters):
+    """Fetch all observations, expand to tidy records, and apply filters."""
+    try:
+        resp = supabase.table("observations").select("*").execute()
+        rows = resp.data or []
+    except Exception as e:
+        print("Error fetching observations for report:", e)
+        rows = []
+    records = _observation_records(rows)
+    return _apply_report_filters(records, filters)
+
+
+@app.route("/admin/research_reports")
+def admin_research_reports():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+
+    filters = _report_filters(request.args)
+    records = _load_report_records(filters)
+    overview, species_summary, habitat_summary, env_summary = _research_report_data(records)
+
+    # Options for the filter dropdowns (based on all observations, not filtered)
+    try:
+        all_rows = supabase.table("observations").select("*").execute().data or []
+    except Exception as e:
+        print("Error fetching observations for filters:", e)
+        all_rows = []
+
+    years = _distinct_options(all_rows, "year_group")
+    groups = _distinct_options(all_rows, "group_id")
+    habitats = _distinct_options(all_rows, "habitat")
+    survey_types = _distinct_options(all_rows, "survey_type")
+
+    report_records = records[:200]
+
+    return render_template(
+        "admin_research_reports.html",
+        filters=filters,
+        overview=overview,
+        species_summary=species_summary[:20],
+        habitat_summary=habitat_summary,
+        env_summary=env_summary,
+        records=report_records,
+        years=years,
+        groups=groups,
+        habitats=habitats,
+        survey_types=survey_types,
+        total_records=len(records),
+        generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    )
+
+
+def _common_export_context(filters):
+    records = _load_report_records(filters)
+    overview, species_summary, habitat_summary, env_summary = _research_report_data(records)
+    return records, overview, species_summary, habitat_summary, env_summary
+
+
+@app.route("/admin/research_reports/export.csv")
+def admin_research_reports_export_csv():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+    filters = _report_filters(request.args)
+    records, overview, _, _, _ = _common_export_context(filters)
+
+    import io as _io
+    import csv as _csv
+
+    buf = _io.StringIO()
+    if records:
+        columns = list(records[0].keys())
+        writer = _csv.DictWriter(buf, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(records)
+    else:
+        buf.write("No records match the selected filters.\n")
+
+    fname = f"ecofield_research_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={fname}"},
+    )
+
+
+@app.route("/admin/research_reports/export.xlsx")
+def admin_research_reports_export_xlsx():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+    filters = _report_filters(request.args)
+    records, overview, species_summary, habitat_summary, env_summary = _common_export_context(filters)
+
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+    import io as _io
+
+    wb = Workbook()
+
+    header_fill = PatternFill("solid", fgColor="2E7D32")
+    header_font = Font(color="FFFFFF", bold=True)
+
+    def style_header(ws, row=1):
+        for cell in ws[row]:
+            cell.fill = header_fill
+            cell.font = header_font
+
+    # ── 1. Metadata sheet ──
+    ws = wb.active
+    ws.title = "Metadata"
+    meta_rows = [
+        ("Report", "EcoField Logger - Research Report"),
+        ("Generated", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+        ("Institution", "University of Ghana - Department of Animal Biology and Conservation Science"),
+        ("Academic Year", filters["year"] or "All"),
+        ("Group", filters["group"] or "All"),
+        ("Habitat", filters["habitat"] or "All"),
+        ("Survey Type", filters["survey_type"] or "All"),
+        ("Date From", filters["date_from"] or "Any"),
+        ("Date To", filters["date_to"] or "Any"),
+        ("Total Records (species occurrences)", overview.get("observations", 0)),
+        ("Species Richness", overview.get("species_richness", 0)),
+        ("Total Individuals", overview.get("total_individuals", 0)),
+    ]
+    for i, (k, v) in enumerate(meta_rows, 1):
+        ws.cell(row=i, column=1, value=k).font = Font(bold=True)
+        ws.cell(row=i, column=2, value=v)
+    ws.column_dimensions["A"].width = 32
+    ws.column_dimensions["B"].width = 60
+
+    # ── 2. Summary sheet ──
+    ws = wb.create_sheet("Summary")
+    ws.append(["Metric", "Value"])
+    ws.append(["Observations (occurrences)", overview.get("observations", 0)])
+    ws.append(["Species richness", overview.get("species_richness", 0)])
+    ws.append(["Total individuals", overview.get("total_individuals", 0)])
+    ws.append(["Habitats surveyed", overview.get("habitat_count", 0)])
+    ws.append(["Groups contributing", overview.get("group_count", 0)])
+    style_header(ws)
+    ws.column_dimensions["A"].width = 32
+    ws.column_dimensions["B"].width = 20
+
+    # ── 3. Species sheet ──
+    ws = wb.create_sheet("By Species")
+    ws.append(["Species", "Total Count", "Occurrences"])
+    for row in species_summary:
+        ws.append([row["species"], row["total_count"], row["observations"]])
+    style_header(ws)
+    for col in range(1, 4):
+        ws.column_dimensions[get_column_letter(col)].width = 28
+
+    # ── 4. Habitat sheet ──
+    ws = wb.create_sheet("By Habitat")
+    ws.append(["Habitat", "Richness", "Total Count", "Occurrences", "Groups", "Simpson", "Shannon", "Evenness"])
+    for row in habitat_summary:
+        ws.append([
+            row["habitat"], row["richness"], row["total_count"], row["observations"],
+            row["groups"], row["simpson"], row["shannon"], row["evenness"],
+        ])
+    style_header(ws)
+    widths = [22, 10, 12, 12, 10, 10, 10, 10]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    # ── 5. Environment sheet ──
+    ws = wb.create_sheet("Environment")
+    ws.append(["Habitat", "Variable", "Mean", "Std Dev"])
+    for hab, vars_map in env_summary.items():
+        for var, stats in vars_map.items():
+            ws.append([hab, var, stats.get("mean"), stats.get("std")])
+    style_header(ws)
+    for col in range(1, 5):
+        ws.column_dimensions[get_column_letter(col)].width = 22
+
+    # ── 6. Records sheet ──
+    ws = wb.create_sheet("Records")
+    if records:
+        columns = list(records[0].keys())
+        ws.append(columns)
+        for rec in records:
+            ws.append([rec.get(c, "") for c in columns])
+        style_header(ws)
+        for i, col in enumerate(columns, 1):
+            ws.column_dimensions[get_column_letter(i)].width = max(14, min(34, len(col) + 2))
+
+    buf = _io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    fname = f"ecofield_research_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return Response(
+        buf.getvalue(),
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={fname}"},
+    )
+
+
+@app.route("/admin/research_reports/export.pdf")
+def admin_research_reports_export_pdf():
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+    filters = _report_filters(request.args)
+    records, overview, species_summary, habitat_summary, env_summary = _common_export_context(filters)
+
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    import io as _io
+
+    buf = _io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=20*mm, rightMargin=20*mm,
+        topMargin=18*mm, bottomMargin=18*mm,
+        title="EcoField Research Report",
+        author="EcoField Logger",
+    )
+
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name="TitleGreen", parent=styles["Title"], textColor=colors.HexColor("#2E7D32")))
+    styles.add(ParagraphStyle(name="H2Green", parent=styles["Heading2"], textColor=colors.HexColor("#1B5E20")))
+    styles.add(ParagraphStyle(name="SmallMeta", parent=styles["Normal"], fontSize=8.5, textColor=colors.grey))
+
+    story = []
+
+    def add_table(headers, rows, col_widths=None, header_bg=colors.HexColor("#2E7D32")):
+        data = [headers] + [list(r) for r in rows]
+        table = Table(data, colWidths=col_widths, repeatRows=1)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), header_bg),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 7.5),
+            ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#CCCCCC")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#E8F5E9")]),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 5),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        return table
+
+    story.append(Paragraph("EcoField Logger — Research-Grade Report", styles["TitleGreen"]))
+    story.append(Spacer(1, 4*mm))
+    story.append(Paragraph(
+        "University of Ghana &bull; School of Biological Sciences &bull; Department of Animal Biology and Conservation Science",
+        styles["Normal"]))
+    story.append(Spacer(1, 3*mm))
+    story.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles["SmallMeta"]))
+    story.append(Spacer(1, 6*mm))
+
+    story.append(Paragraph("1. Report Scope &amp; Filters", styles["H2Green"]))
+    scope_rows = [
+        ("Academic Year", filters["year"] or "All"),
+        ("Group", filters["group"] or "All"),
+        ("Habitat", filters["habitat"] or "All"),
+        ("Survey Type", filters["survey_type"] or "All"),
+        ("Date range", (filters["date_from"] or "Any") + " → " + (filters["date_to"] or "Any")),
+    ]
+    story.append(add_table(["Filter", "Applied Value"], scope_rows, col_widths=[60*mm, 110*mm]))
+    story.append(Spacer(1, 6*mm))
+
+    story.append(Paragraph("2. Executive Summary", styles["H2Green"]))
+    summary_rows = [
+        ("Species occurrences (records)", overview.get("observations", 0)),
+        ("Species richness", overview.get("species_richness", 0)),
+        ("Total individuals observed", overview.get("total_individuals", 0)),
+        ("Habitats surveyed", overview.get("habitat_count", 0)),
+        ("Groups contributing", overview.get("group_count", 0)),
+        ("Average individuals per species", overview.get("avg_per_species", 0)),
+    ]
+    story.append(add_table(["Metric", "Value"], summary_rows, col_widths=[110*mm, 60*mm]))
+    story.append(Spacer(1, 6*mm))
+
+    if species_summary:
+        story.append(Paragraph("3. Species Summary (Top 20)", styles["H2Green"]))
+        rows = [(i + 1, s["species"], s["total_count"], s["observations"]) for i, s in enumerate(species_summary[:20])]
+        story.append(add_table(["#", "Species", "Total Count", "Occurrences"],
+                               rows, col_widths=[15*mm, 100*mm, 35*mm, 35*mm]))
+        story.append(Spacer(1, 6*mm))
+
+    if habitat_summary:
+        story.append(Paragraph("4. Habitat Summary &amp; Diversity Indices", styles["H2Green"]))
+        rows = [(h["habitat"], h["richness"], h["total_count"], h["observations"],
+                 h["simpson"], h["shannon"], h["evenness"]) for h in habitat_summary]
+        story.append(add_table(
+            ["Habitat", "Richness", "Count", "Occur.", "Simpson", "Shannon", "Evenness"],
+            rows, col_widths=[45*mm, 20*mm, 22*mm, 22*mm, 20*mm, 20*mm, 21*mm]))
+        story.append(Spacer(1, 4*mm))
+        story.append(Paragraph(
+            "<i>Simpson index: 1 − Σp² (1 = maximum diversity). Shannon index H′: higher = more diverse. "
+            "Evenness ranges 0–1 (1 = evenly distributed).</i>", styles["SmallMeta"]))
+        story.append(Spacer(1, 6*mm))
+
+    if env_summary:
+        story.append(Paragraph("5. Environmental Variable Summary", styles["H2Green"]))
+        rows = []
+        for hab, vars_map in env_summary.items():
+            for var, stats in vars_map.items():
+                rows.append((hab, var, stats.get("mean") if stats.get("mean") is not None else "—",
+                             stats.get("std") if stats.get("std") is not None else "—"))
+        story.append(add_table(["Habitat", "Variable", "Mean", "Std Dev"], rows,
+                               col_widths=[50*mm, 55*mm, 35*mm, 35*mm]))
+        story.append(Spacer(1, 4*mm))
+        story.append(Paragraph(
+            "Units follow the Site Details field definitions used in EcoField data entry. "
+            "Blank cells indicate no data was recorded.", styles["SmallMeta"]))
+        story.append(Spacer(1, 6*mm))
+
+    story.append(Paragraph("6. Methodology &amp; Data Notes", styles["H2Green"]))
+    story.append(Paragraph(
+        "This report aggregates field observations entered into the EcoField Logger by student "
+        "research groups. Each record represents a single species occurrence within an observation "
+        "entry (species_list/species_manual with associated counts and survey method). Records were "
+        "expanded into tidy long-format rows for analysis. Species richness, total abundance, "
+        "Shannon–Weiner index, Simpson index and habitat evenness were computed per habitat. "
+        "Data should be cited with the generation timestamp shown above and remains subject to "
+        "verification for any records entered manually in the field.", styles["Normal"]))
+    story.append(Spacer(1, 8*mm))
+    story.append(Paragraph(
+        "&copy; EcoField Logger by MiltonPixel — Department of Animal Biology and Conservation Science (UG).",
+        styles["SmallMeta"]))
+
+    doc.build(story)
+
+    buf.seek(0)
+    fname = f"ecofield_research_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    return Response(
+        buf.getvalue(),
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={fname}"},
+    )
+
+
 # ------------------------- RUN APP -------------------------
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     debug_mode = os.getenv("FLASK_DEBUG", "False").lower() == "true"
-    app.run(host="0.0.0.0", port=port, debug=debug_mode)
+    app.run(host="0.0.0.0", port=port, debug=debug_mode, threaded=True)

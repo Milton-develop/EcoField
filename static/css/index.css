@@ -750,6 +750,24 @@ div .manual_input{
      background: none;
 }
 
+/* AI Identify button on the home page header */
+.ai-nav-btn{
+    background-color: #2e7d32;
+    color: white;
+    padding: 10px;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.ai-nav-btn:hover{
+    background: none;
+    color: white;
+    padding: 10px;
+    text-decoration: none;
+    border-radius: 5px;
+    border: 2px solid #ffffff;
+}
+
 .copyright{
     font-size: 12px;
 }
@@ -821,237 +839,6 @@ div .manual_input{
     background-color: #fff3cd;
     margin: 10px;
     border-left: 5px solid #d4b241;
-}
-
-/* ===== ADMIN SIDEBAR LAYOUT ===== */
-.admin-layout {
-  min-height: 100vh;
-}
-
-.admin-sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 250px;
-  height: 100vh;
-  background: #1b5e20;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 0;
-  z-index: 100;
-  box-sizing: border-box;
-}
-
-.sidebar-brand {
-  padding: 0 1.5rem 1.5rem;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
-  margin-bottom: 1rem;
-  flex-shrink: 0;
-}
-
-.sidebar-brand-link {
-  color: white;
-  text-decoration: none;
-  font-size: 1.2rem;
-  font-weight: 600;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.sidebar-brand-link:hover {
-  text-decoration: underline;
-}
-
-.sidebar-badge {
-  background: rgba(255,255,255,0.2);
-  border-radius: 20px;
-  font-size: 11px;
-  padding: 2px 8px;
-  color: white;
-  display: inline-block;
-}
-
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0 1rem;
-  flex: 1;
-  overflow-y: auto;
-}
-
-.sidebar-link {
-  color: rgba(255,255,255,0.8);
-  text-decoration: none;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  font-size: 0.95rem;
-  flex-shrink: 0;
-}
-
-.sidebar-link:hover {
-  background: rgba(255,255,255,0.15);
-  color: white;
-}
-
-.sidebar-link.active {
-  background: white;
-  color: #1b5e20;
-  font-weight: 600;
-}
-
-.sidebar-logout {
-  margin-top: auto;
-  color: #ffcdd2;
-  flex-shrink: 0;
-}
-
-.sidebar-logout:hover {
-  background: rgba(244, 67, 54, 0.2);
-  color: #ffcdd2;
-}
-
-.admin-content {
-  margin-left: 250px;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* ===== HAMBURGER TOGGLE ===== */
-.sidebar-toggle {
-  display: none;
-  position: fixed;
-  top: 0.75rem;
-  left: 0.75rem;
-  z-index: 200;
-  background: #1b5e20;
-  border: none;
-  border-radius: 8px;
-  padding: 0.5rem 0.6rem;
-  cursor: pointer;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.hamburger-line {
-  display: block;
-  width: 22px;
-  height: 3px;
-  background: white;
-  border-radius: 2px;
-}
-
-/* ===== SIDEBAR CLOSE BUTTON ===== */
-.sidebar-close {
-  display: none;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.3rem;
-  position: relative;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-}
-
-.close-line {
-  display: block;
-  width: 20px;
-  height: 3px;
-  background: rgba(255,255,255,0.8);
-  border-radius: 2px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-}
-
-.close-line:first-child {
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.close-line:last-child {
-  transform: translate(-50%, -50%) rotate(-45deg);
-}
-
-/* ===== SIDEBAR OVERLAY ===== */
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 99;
-}
-
-@media (max-width: 768px) {
-  .sidebar-toggle {
-    display: flex;
-  }
-
-  .sidebar-overlay.open {
-    display: block;
-  }
-
-  .admin-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 260px;
-    height: 100vh;
-    padding: 1.5rem 0;
-    z-index: 100;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-  }
-
-  .admin-sidebar.open {
-    transform: translateX(0);
-  }
-
-  .sidebar-close {
-    display: flex;
-    position: absolute;
-    top: 0;
-    right: 1.5rem;
-  }
-
-  .sidebar-brand {
-    padding: 0 1.5rem 1.5rem;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-    margin-bottom: 1rem;
-    position: relative;
-  }
-
-  .sidebar-brand-link {
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
-  }
-
-  .sidebar-nav {
-    flex-direction: column;
-    padding: 0 1rem;
-    gap: 0.25rem;
-    overflow-y: auto;
-    width: auto;
-  }
-
-  .sidebar-link {
-    padding: 0.7rem 1rem;
-    font-size: 0.95rem;
-    flex: none;
-    text-align: left;
-    min-width: auto;
-  }
-
-  .sidebar-logout {
-    margin-top: auto;
-  }
-
-  .admin-content {
-    margin-left: 0;
-    margin-right: 0;
-  }
 }
 
 /* ===== NOTIFICATION BELL ===== */

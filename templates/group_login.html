@@ -18,7 +18,7 @@
       <h2 class="user">ADMIN USER</h2>
       {%endif%}
       <div class="nav-links">
-        {% if session.get('user_role'=='student')%}
+        {% if session.get('user_role')=='student'%}
         <a href="/home">Home</a>
         {%endif%}
         {%if session.get('user_role')=='admin'%}

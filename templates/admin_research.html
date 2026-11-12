@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_groups.css') }}?v={{ cache_bust }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_bust }}">
+  <link rel="icon" type="image/png" href="/static/images/icon-192x192.png">
+  <title>Research Review — Admin</title>
+  <style>
+    .status-badge {
+      display: inline-block;
+      padding: 3px 3px;
+      border-radius: 8px;
+      font-size: 0.5rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      width: 60px;
+      text-align: center;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-approved { background: #d4edda; color: #155724; }
+    .status-rejected { background: #f8d7da; color: #721c24; }
+    .research-title { font-weight: 600; color: #1b5e20; }
+    .research-desc {
+      font-size: 0.85rem;
+      color: #555;
+      max-width: 320px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .research-meta {
+      font-size: 0.8rem;
+      color: #888;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .filter-tabs {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .filter-tab {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #555;
+      background: #f0f0f0;
+      transition: all 0.2s;
+    }
+    .filter-tab:hover { background: #e0e0e0; }
+    .filter-tab.active { background: #2e7d32; color: white; }
+    .action-btn {
+      border: none;
+      padding: 5px 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: white;
+    }
+    .btn-approve { background: #2e7d32; }
+    .btn-approve:hover { background: #1b5e20; }
+    .btn-reject { background: #e65100; }
+    .btn-reject:hover { background: #bf360c; }
+    .btn-delete { background: #c62828; }
+    .btn-delete:hover { background: #8e0000; }
+    .doc-link {
+      color: #2e7d32;
+      text-decoration: underline;
+      font-size: 0.6rem;
+    }
+    td[data-label='Authors'] {
+      font-size: 0.8rem;
+      width: 90px;
+    }
+    td[data-label='Category'] {
+      text-transform: uppercase;
+      font-size: 0.6rem;
+    }
+    @media (max-width: 768px) {
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0 1rem !important;
+        margin-bottom: 1rem;
+      }
+      .filter-tabs {
+        justify-content: center;
+      }
+      .research-desc {
+        max-width: 200px;
+      }
+      td[data-label="Action"] > div {
+        min-width: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+  {% set active_sidebar = 'research' %}
+
+  <div class="admin-layout">
+    {% include '_admin_sidebar.html' %}
+
+    <div class="admin-content">
+      <div class="head">
+        <h1 class="text">Research Review</h1>
+        <p>Review and approve submitted research posts</p>
+      </div>
+
+      <div class="toolbar" style="padding: 0 2rem;">
+        <div class="filter-tabs">
+          <a href="{{ url_for('admin_research', status='all') }}" class="filter-tab{% if status_filter == 'all' %} active{% endif %}">All</a>
+          <a href="{{ url_for('admin_research', status='pending') }}" class="filter-tab{% if status_filter == 'pending' %} active{% endif %}">Pending{% if pending_count > 0 %} ({{ pending_count }}){% endif %}</a>
+          <a href="{{ url_for('admin_research', status='approved') }}" class="filter-tab{% if status_filter == 'approved' %} active{% endif %}">Approved</a>
+          <a href="{{ url_for('admin_research', status='rejected') }}" class="filter-tab{% if status_filter == 'rejected' %} active{% endif %}">Rejected</a>
+        </div>
+        <p style="margin:0; color:#666;">
+          {% if posts %}
+            <strong>{{ posts|length }}</strong> post{{ '' if posts|length == 1 else 's' }}
+          {% endif %}
+        </p>
+      </div>
+
+      <main>
+        {% if posts %}
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Title</th>
+                <th>Authors</th>
+                <th>Institution</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Document</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in posts %}
+              <tr>
+                <td data-label="Date" class="research-meta">{{ p.get('created_at', 'N/A')[:10] }}</td>
+                <td data-label="Title">
+                  <div class="research-title">{{ p.get('title', 'N/A') }}</div>
+                  <div class="research-desc" title="{{ p.get('abstract', '') }}">{{ p.get('abstract', '') }}</div>
+                </td>
+                <td data-label="Authors">{{ p.get('authors', 'N/A') }} ({{ p.get('email', 'N/A')}})</td>
+                <td data-label="Institution">{{ p.get('institution', 'N/A') }}</td>
+                <td data-label="Category">{{ p.get('category', 'N/A') }}</td>
+                <td data-label="Status">
+                  <span class="status-badge status-{{ p.get('status', 'pending') }}">{{ p.get('status', 'pending') }}</span>
+                </td>
+                <td data-label="Document">
+                  {% if p.get('document_file') %}
+                    <a href="{{ url_for('research_download', post_id=p.id) }}" target="_blank" class="doc-link">{{ p.get('document_original_name', 'Document') }}</a>
+                  {% else %}
+                    <span style="color:#999;">None</span>
+                  {% endif %}
+                </td>
+                <td data-label="Action">
+                  <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                    {% if p.get('status') != 'approved' %}
+                    <form action="{{ url_for('admin_research_approve', post_id=p.id, status=status_filter) }}" method="POST" style="margin:0;">
+                      <button type="submit" class="action-btn btn-approve">Approve</button>
+                    </form>
+                    {% endif %}
+                    {% if p.get('status') != 'rejected' %}
+                    <form action="{{ url_for('admin_research_reject', post_id=p.id, status=status_filter) }}" method="POST" style="margin:0;">
+                      <button type="submit" class="action-btn btn-reject">Reject</button>
+                    </form>
+                    {% endif %}
+                    <form action="{{ url_for('admin_research_delete', post_id=p.id, status=status_filter) }}" method="POST" style="margin:0;" onsubmit="return confirm('Delete this research post permanently?');">
+                      <button type="submit" class="action-btn btn-delete">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:3rem; color:#999;">
+          <p style="font-size:1.2rem;">No research posts found.</p>
+          <p>Submissions from researchers will appear here for review.</p>
+        </div>
+        {% endif %}
+      </main>
+    </div>
+  </div>
+
+</body>
+</html>

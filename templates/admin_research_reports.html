@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_groups.css') }}?v={{ cache_bust }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_bust }}">
+  <link rel="icon" type="image/png" href="/static/images/icon-192x192.png">
+  <title>Research Reports — Admin</title>
+  <style>
+    .rr-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 0 2rem;
+    }
+    .rr-toolbar .btn { margin: 0; }
+
+    .rr-filter-card {
+      margin: 0 2rem 1.5rem;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 1.5rem 1.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .rr-filter-card h2 {
+      color: #1b5e20;
+      margin: 0 0 1rem;
+      font-size: 1.15rem;
+    }
+    .rr-filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 1rem;
+    }
+    .rr-field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .rr-field input,
+    .rr-field select {
+      width: 100%;
+      padding: 0.55rem 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      font-family: inherit;
+      color: #333;
+      background: #fff;
+    }
+    .rr-filter-actions {
+      margin-top: 1.1rem;
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .rr-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 1rem;
+      margin: 0 2rem 1.5rem;
+    }
+    .rr-summary-card {
+      background: linear-gradient(to right, #2e7d32, #4f9d53);
+      border-radius: 10px;
+      padding: 1.1rem 1.2rem;
+      color: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .rr-summary-card .rr-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      opacity: 0.9;
+    }
+    .rr-summary-card .rr-value {
+      font-size: 1.9rem;
+      font-weight: 700;
+      margin-top: 0.2rem;
+    }
+    .rr-summary-card .rr-sub {
+      font-size: 0.8rem;
+      opacity: 0.95;
+      margin-top: 0.15rem;
+    }
+
+    .rr-section {
+      margin: 0 2rem 1.75rem;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 1.4rem 1.6rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .rr-section h2 {
+      color: #1b5e20;
+      margin: 0 0 0.9rem;
+      font-size: 1.1rem;
+      border-bottom: 2px solid #e8f5e9;
+      padding-bottom: 0.5rem;
+    }
+
+    .rr-empty {
+      text-align: center;
+      color: #999;
+      padding: 2rem;
+    }
+    .rr-empty p { margin: 0.4rem 0; }
+
+    .rr-export-badges {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.9rem;
+    }
+    .rr-export-badges a {
+      text-decoration: none;
+    }
+    .rr-export-badges .btn {
+      margin: 0;
+    }
+
+    .rr-danger { color: #c62828; }
+
+    @media (max-width: 768px) {
+      .rr-toolbar,
+      .rr-filter-card,
+      .rr-summary-grid,
+      .rr-section {
+        margin-left: 1rem;
+        margin-right: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      .rr-toolbar { flex-direction: column; align-items: stretch; }
+      .rr-toolbar .btn { width: 100%; justify-content: center; }
+      .rr-filter-actions .btn { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  {% set active_sidebar = 'research_reports' %}
+
+  <div class="admin-layout">
+    {% include '_admin_sidebar.html' %}
+
+    <div class="admin-content">
+      <div class="head">
+        <h1 class="text">Research Reports</h1>
+        <p>Exportable research-grade reports from field observations</p>
+      </div>
+
+      <div class="toolbar rr-toolbar">
+        <p style="margin:0; color:#666;">
+          Generated <strong>{{ generated_at }}</strong> &mdash;
+          <strong>{{ total_records }}</strong> occurrence record{{ '' if total_records == 1 else 's' }} in scope
+        </p>
+        {% if total_records %}
+        <div class="rr-export-badges">
+          <a href="{{ url_for('admin_research_reports_export_csv', **filters) }}" class="btn" style="background:#1565c0;">Download CSV</a>
+          <a href="{{ url_for('admin_research_reports_export_xlsx', **filters) }}" class="btn" style="background:#2e7d32;">Download Excel</a>
+          <a href="{{ url_for('admin_research_reports_export_pdf', **filters) }}" class="btn" style="background:#7b1fa2;">Download PDF</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <form method="GET" action="{{ url_for('admin_research_reports') }}">
+        <div class="rr-filter-card">
+          <h2>Report Filters</h2>
+          <div class="rr-filters-grid">
+            <div class="rr-field">
+              <label for="f-year">Academic Year</label>
+              <select id="f-year" name="year">
+                <option value="">All years</option>
+                {% for y in years %}
+                <option value="{{ y }}" {% if filters.year == y %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="rr-field">
+              <label for="f-group">Group</label>
+              <select id="f-group" name="group">
+                <option value="">All groups</option>
+                {% for g in groups %}
+                <option value="{{ g }}" {% if filters.group == g %}selected{% endif %}>{{ g }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="rr-field">
+              <label for="f-habitat">Habitat</label>
+              <select id="f-habitat" name="habitat">
+                <option value="">All habitats</option>
+                {% for h in habitats %}
+                <option value="{{ h }}" {% if filters.habitat == h %}selected{% endif %}>{{ h }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="rr-field">
+              <label for="f-survey">Survey Type</label>
+              <select id="f-survey" name="survey_type">
+                <option value="">All types</option>
+                {% for s in survey_types %}
+                <option value="{{ s }}" {% if filters.survey_type == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="rr-field">
+              <label for="f-from">Date From</label>
+              <input type="date" id="f-from" name="date_from" value="{{ filters.date_from }}">
+            </div>
+            <div class="rr-field">
+              <label for="f-to">Date To</label>
+              <input type="date" id="f-to" name="date_to" value="{{ filters.date_to }}">
+            </div>
+          </div>
+          <div class="rr-filter-actions">
+            <button type="submit" class="btn">Apply Filters</button>
+            <a href="{{ url_for('admin_research_reports') }}" class="btn" style="background:#6c757d;">Reset</a>
+          </div>
+        </div>
+      </form>
+
+      {% if overview %}
+      <div class="rr-summary-grid">
+        <div class="rr-summary-card">
+          <div class="rr-label">Occurrences</div>
+          <div class="rr-value">{{ overview.observations }}</div>
+          <div class="rr-sub">species records</div>
+        </div>
+        <div class="rr-summary-card">
+          <div class="rr-label">Species Richness</div>
+          <div class="rr-value">{{ overview.species_richness }}</div>
+          <div class="rr-sub">unique species</div>
+        </div>
+        <div class="rr-summary-card">
+          <div class="rr-label">Individuals</div>
+          <div class="rr-value">{{ overview.total_individuals }}</div>
+          <div class="rr-sub">total observed</div>
+        </div>
+        <div class="rr-summary-card">
+          <div class="rr-label">Habitats</div>
+          <div class="rr-value">{{ overview.habitat_count }}</div>
+          <div class="rr-sub">recorded</div>
+        </div>
+        <div class="rr-summary-card">
+          <div class="rr-label">Groups</div>
+          <div class="rr-value">{{ overview.group_count }}</div>
+          <div class="rr-sub">contributing</div>
+        </div>
+      </div>
+
+      <div class="rr-section">
+        <h2>Species Summary (Top 20)</h2>
+        {% if species_summary %}
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Species</th>
+                <th>Total Count</th>
+                <th>Occurrences</th>
+                <th>Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set total_occ = overview.observations %}
+              {% for s in species_summary %}
+              <tr>
+                <td data-label="Species"><strong>{{ s.species }}</strong></td>
+                <td data-label="Total Count">{{ s.total_count }}</td>
+                <td data-label="Occurrences">{{ s.observations }}</td>
+                <td data-label="Share">{{ ((s.observations / total_occ * 100)|round(1)) if total_occ else 0 }}%</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="rr-empty"><p>No species data in the selected scope.</p></div>
+        {% endif %}
+      </div>
+
+      {% if habitat_summary %}
+      <div class="rr-section">
+        <h2>Habitat Summary &amp; Diversity Indices</h2>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Habitat</th>
+                <th>Richness</th>
+                <th>Total Count</th>
+                <th>Occurrences</th>
+                <th>Groups</th>
+                <th>Simpson</th>
+                <th>Shannon H′</th>
+                <th>Evenness</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for h in habitat_summary %}
+              <tr>
+                <td data-label="Habitat"><strong>{{ h.habitat }}</strong></td>
+                <td data-label="Richness">{{ h.richness }}</td>
+                <td data-label="Count">{{ h.total_count }}</td>
+                <td data-label="Occurrences">{{ h.observations }}</td>
+                <td data-label="Groups">{{ h.groups }}</td>
+                <td data-label="Simpson">{{ h.simpson }}</td>
+                <td data-label="Shannon">{{ h.shannon }}</td>
+                <td data-label="Evenness">{{ h.evenness }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="rr-section">
+        <h2>Record Preview (first 200)</h2>
+        {% if records %}
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Group</th>
+                <th>Habitat</th>
+                <th>Species</th>
+                <th>Count</th>
+                <th>Method</th>
+                <th>Survey Type</th>
+                <th>Location</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in records %}
+              <tr>
+                <td data-label="Timestamp" class="report-meta">{{ (r.timestamp or '')[:19] | replace('T', ' ') }}</td>
+                <td data-label="Group">{{ r.group_id }}</td>
+                <td data-label="Habitat">{{ r.habitat }}</td>
+                <td data-label="Species"><strong>{{ r.species }}</strong></td>
+                <td data-label="Count">{{ r.count }}</td>
+                <td data-label="Method">{{ r.method }}</td>
+                <td data-label="Survey">{{ r.survey_type }}</td>
+                <td data-label="Location" class="report-meta">{{ r.location }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="rr-empty">
+          <p style="font-size:1.1rem;">No records match the selected filters.</p>
+          <p>Try widening the date range or clearing a habitat/group filter.</p>
+        </div>
+        {% endif %}
+      </div>
+      {% else %}
+      <div class="rr-section">
+        <h2>No Data</h2>
+        <div class="rr-empty">
+          <p style="font-size:1.1rem;">No observations have been recorded yet.</p>
+          <p>Once student groups submit field entries, research reports can be generated here.</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</body>
+</html>

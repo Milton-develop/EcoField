@@ -1,0 +1,339 @@
+.research-hero {
+    background: linear-gradient(90deg, rgba(4, 20, 12, 0.95) 0%, rgba(4, 12, 18, 0.6) 60%, rgba(0, 0, 0, 0.2) 100%), url('/static/images/student.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+.research-hero-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 20px 60px;
+    color: #fff;
+}
+
+.research-hero-content h1 {
+    font-size: 2.2rem;
+    margin: 0 0 12px;
+}
+
+.research-hero-content p {
+    font-size: 1.05rem;
+    color: #ddd;
+    max-width: 500px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.nav-links a.active {
+    color: #37b23e;
+}
+
+.research-submit {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 50px 20px;
+}
+
+.research-submit h2 {
+    color: #2e7d32;
+    font-size: 1.6rem;
+    margin: 0 0 24px;
+    text-align: center;
+}
+
+.error-msg {
+    background: #fdecea;
+    color: #c62828;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.research-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.form-row input,
+.form-row select {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.form-row input:focus,
+.form-row select:focus {
+    border-color: #37b23e;
+}
+
+.file-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.file-label {
+    white-space: nowrap;
+    font-size: 0.85rem;
+    color: #555;
+    font-weight: 500;
+}
+
+.file-input-wrapper input[type="file"] {
+    font-size: 0.82rem;
+    color: #555;
+    padding: 10px 0;
+    border: none;
+    flex: 1;
+}
+
+.file-input-wrapper input[type="file"]::file-selector-button {
+    background: #e8f5e9;
+    border: 1px solid #c8e6c9;
+    border-radius: 6px;
+    padding: 8px 14px;
+    color: #2e7d32;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-right: 10px;
+    transition: background 0.2s;
+}
+
+.file-input-wrapper input[type="file"]::file-selector-button:hover {
+    background: #c8e6c9;
+}
+
+.research-form textarea {
+    padding: 12px 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.research-form textarea:focus {
+    border-color: #37b23e;
+}
+
+.submit-btn {
+    background: #2e7d32;
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.submit-btn:hover {
+    background: #256b29;
+}
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.modal-overlay.open {
+    display: flex;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 800px;
+    width: 100%;
+    padding: 32px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.modal-header h2 {
+    color: #2e7d32;
+    font-size: 1.6rem;
+    margin: 0;
+    text-align: left;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+    padding: 0 4px;
+}
+
+.modal-close:hover {
+    color: #c62828;
+}
+
+.research-listings {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 20px 60px;
+}
+
+.research-listings h2 {
+    color: #2e7d32;
+    font-size: 1.6rem;
+    margin: 0 0 30px;
+    text-align: center;
+}
+
+.research-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.research-card {
+    background: #f5f7f5;
+    border-radius: 12px;
+    padding: 28px 24px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.research-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(46, 125, 50, 0.12);
+}
+
+.research-category {
+    display: inline-block;
+    background: #d4edd6;
+    color: #1a5a1e;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: capitalize;
+    margin-bottom: 12px;
+}
+
+.research-card h3 {
+    color: #1a3a1c;
+    font-size: 1.15rem;
+    margin: 0 0 8px;
+    line-height: 1.3;
+}
+
+.research-authors {
+    color: #37b23e;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin: 0 0 4px;
+}
+
+.research-institution {
+    color: #888;
+    font-size: 0.8rem;
+    margin: 0 0 12px;
+}
+
+.research-abstract {
+    color: #555;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin: 0 0 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.research-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #999;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.research-meta a {
+    color: #2e7d32;
+    text-decoration: none;
+}
+
+.research-meta a:hover {
+    text-decoration: underline;
+}
+
+.research-meta-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.download-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.download-link::before {
+    content: "\2193";
+    font-size: 0.9rem;
+}
+
+.no-posts {
+    text-align: center;
+    color: #888;
+    font-size: 1rem;
+    padding: 40px 0;
+}
+
+@media (max-width: 700px) {
+    .form-row {
+        flex-direction: column;
+    }
+    .research-grid {
+        grid-template-columns: 1fr;
+    }
+    .research-hero-content h1 {
+        font-size: 1.6rem;
+    }
+    .modal {
+        padding: 24px;
+    }
+}

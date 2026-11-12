@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EcoField | Research</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}?v={{ cache_bust }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/research.css') }}?v={{ cache_bust }}" />
+    <link rel="icon" href="/static/images/icon-192x192.png" />
+</head>
+<body>
+
+    <div class="research-hero">
+        <nav>
+            <div class="nav-bar">
+                <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Open navigation">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                 <div class="nav-brand">
+            <img src="/static/images/crest.png" alt="University of Ghana" class="nav-crest">
+            <div class="nav-brand-text">
+              <span class="nav-uni-name">University of Ghana</span>
+              <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+            </div>
+          </div>
+                <div class="nav-links desktop-nav">
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/research" class="active">Research</a></li>
+                        <li><a href="/explore">Explore</a></li>
+                        <li><a href="/projects">Projects</a></li>
+                        <li><a href="/models">Models</a></li>
+                        <li><a href="/about">About</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="mobile-sidebar-overlay" id="mobileSidebarOverlay"></div>
+        <div class="mobile-sidebar" id="mobileSidebar">
+            <div class="mobile-sidebar-brand">
+          <img src="/static/images/crest.png" alt="University of Ghana" class="nav-crest">
+          <div class="nav-brand-text">
+            <span class="nav-uni-name">University of Ghana</span>
+            <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+          </div>
+          <button class="mobile-sidebar-close" id="mobileSidebarClose" aria-label="Close navigation">
+            <span class="close-line"></span>
+            <span class="close-line"></span>
+          </button>
+        </div>
+            <nav class="mobile-sidebar-nav">
+                <a href="/" class="mobile-sidebar-link">Home</a>
+                <a href="/research" class="mobile-sidebar-link active">Research</a>
+                <a href="/explore" class="mobile-sidebar-link">Explore</a>
+                <a href="/projects" class="mobile-sidebar-link">Projects</a>
+                <a href="/models" class="mobile-sidebar-link">Models</a>
+                <a href="/about" class="mobile-sidebar-link">About</a>
+            </nav>
+        </div>
+        <div class="research-hero-content">
+            <h1><span style="color: #37b23e">Research</span> Repository</h1>
+            <p>Share your ecological research, field studies, and conservation findings with the community.</p>
+            <button type="button" class="submit-btn" id="openResearchModal">Submit Research</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="researchModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Submit Your Research</h2>
+                <button type="button" class="modal-close" id="closeResearchModal" aria-label="Close">&times;</button>
+            </div>
+            {% if error %}
+            <p class="error-msg">{{ error }}</p>
+            {% endif %}
+            {% if success_msg %}
+            <p class="error-msg" style="background:#e8f5e9; color:#1b5e20; border-color:#a5d6a7;">{{ success_msg }}</p>
+            {% endif %}
+            <form method="POST" class="research-form" enctype="multipart/form-data">
+                <div class="form-row">
+                    <input type="text" name="title" placeholder="Research Title *" required />
+                    <input type="text" name="authors" placeholder="Authors (comma separated) *" required />
+                </div>
+                <div class="form-row">
+                    <input type="email" name="email" placeholder="Contact Email" />
+                    <input type="text" name="institution" placeholder="Institution / Affiliation" />
+                </div>
+                <div class="form-row">
+                    <select name="category">
+                        <option value="">Select Category</option>
+                        <option value="biodiversity">Biodiversity</option>
+                        <option value="conservation">Conservation</option>
+                        <option value="ecology">Ecology</option>
+                        <option value="climate">Climate & Environment</option>
+                        <option value="botany">Botany</option>
+                        <option value="zoology">Zoology</option>
+                        <option value="marine">Marine Biology</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <div class="file-input-wrapper">
+                        <label class="file-label">Attach Document</label>
+                        <input type="file" name="document" accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx,.zip,.csv" />
+                    </div>
+                </div>
+                <textarea name="abstract" placeholder="Abstract / Summary *" rows="6" required></textarea>
+                <button type="submit" class="submit-btn">Submit Research</button>
+            </form>
+        </div>
+    </div>
+
+    <section class="research-listings">
+        <h2>Published Research</h2>
+        {% if posts %}
+        <div class="research-grid">
+            {% for post in posts %}
+            <div class="research-card">
+                <span class="research-category">{{ post.category or 'General' }}</span>
+                <h3>{{ post.title }}</h3>
+                <p class="research-authors">{{ post.authors }}</p>
+                {% if post.institution %}
+                <p class="research-institution">{{ post.institution }}</p>
+                {% endif %}
+                <p class="research-abstract">{{ post.abstract }}</p>
+                <div class="research-meta">
+                    <span>{{ post.created_at[:10] if post.created_at else '' }}</span>
+                    <div class="research-meta-right">
+                        {% if post.document_file %}
+                        <a href="{{ url_for('research_download', post_id=post.id) }}" class="download-link">Download Full Paper</a>
+                        {% endif %}
+                        {% if post.email %}
+                        <a href="mailto:{{ post.email }}">{{ post.email }}</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-posts">No research has been published yet. Be the first to submit!</p>
+        {% endif %}
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <h3>EcoField</h3>
+                <p>Proudly developed at the University of Ghana (Department of Animal 
+                    Biology and Conservation Science) and built to serve researchers, 
+                    institutions, and conservation organizations everywhere.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/research">Research</a></li>
+                    <li><a href="/explore">Explore</a></li>
+                    <li><a href="/projects">Projects</a></li>
+                    <li><a href="/models">Models</a></li>
+                    <li><a href="/about">About</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <ul>
+                    <li><a href="mailto:hello.miltonpixel@gmail.com">Email</a></li>
+                    <li><a href="#">Support Center</a></li>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 EcoField Logger by <a href="/about#developer" style="color: #666;">MiltonPixel</a>. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var toggle = document.getElementById('mobileNavToggle');
+        var close = document.getElementById('mobileSidebarClose');
+        var sidebar = document.getElementById('mobileSidebar');
+        var overlay = document.getElementById('mobileSidebarOverlay');
+
+        function openSidebar() {
+          sidebar.classList.add('open');
+          overlay.classList.add('open');
+          toggle.classList.add('open');
+        }
+
+        function closeSidebar() {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('open');
+          toggle.classList.remove('open');
+        }
+
+        if (toggle) toggle.addEventListener('click', openSidebar);
+        if (close) close.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
+
+        var openModalBtn = document.getElementById('openResearchModal');
+        var researchModal = document.getElementById('researchModal');
+        var closeModalBtn = document.getElementById('closeResearchModal');
+
+        function openModal() {
+          if (researchModal) researchModal.classList.add('open');
+        }
+
+        function closeModal() {
+          if (researchModal) researchModal.classList.remove('open');
+        }
+
+        if (openModalBtn) openModalBtn.addEventListener('click', openModal);
+        if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+        if (researchModal) {
+          researchModal.addEventListener('click', function(e) {
+            if (e.target === researchModal) closeModal();
+          });
+          document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+          });
+        }
+
+        if (document.querySelector('.modal .error-msg')) {
+          openModal();
+        }
+      });
+    </script>
+</body>
+</html>

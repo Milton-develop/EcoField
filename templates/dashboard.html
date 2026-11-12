@@ -5,279 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_bust }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_groups.css') }}?v={{ cache_bust }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v={{ cache_bust }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <link rel="icon" type="image/png" href="/static/images/icon-192x192.png">
-
   <title>Admin Dashboard</title>
-  <style>
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.25rem;
-      padding: 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .dashboard-card {
-      background: linear-gradient(to right, #2e7d32, #4f9d53);
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .dashboard-card .card-label {
-      font-size: 0.85rem;
-      color: #ffffff;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-
-    .dashboard-card .card-value {
-      font-size: 2.2rem;
-      font-weight: 700;
-      color: #b8e6bb;
-    }
-
-    .dashboard-card.card-danger .card-value {
-      color: #c62828;
-    }
-
-    .dashboard-card.card-warning .card-value {
-      color: #e65100;
-    }
-
-    .dashboard-card.card-info .card-value {
-      color: #0d47a1;
-    }
-
-    .card-body {
-      color: #ffffff;
-      font-size: 0.9rem;
-      line-height: 1.5;
-    }
-
-    .card-body ul {
-      margin: 0.5rem 0;
-      padding-left: 1.25rem;
-    }
-
-    .card-body li {
-      padding: 0.15rem 0;
-    }
-
-    .group-list {
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .notif-form {
-      max-width: 600px;
-      margin: 2rem;
-      background: white;
-      border-radius: 12px;
-      padding: 2rem;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-      border: 2px solid #2e7d32;
-    }
-
-    .notif-form h2 {
-      margin-top: 0;
-      color: #1b5e20;
-    }
-
-    .notif-form label {
-      display: block;
-      margin: 0.75rem 0 0.3rem;
-      font-weight: 500;
-      color: #333;
-    }
-
-    .notif-form input,
-    .notif-form textarea {
-      width: 100%;
-      padding: 0.7rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 1rem;
-      box-sizing: border-box;
-      font-family: inherit;
-    }
-
-    .notif-form textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-
-    .notif-form .btn {
-      margin-top: 1rem;
-      padding: 0.7rem 1.5rem;
-      font-size: 1rem;
-      border: none;
-    }
-
-    .notif-form .btn:hover {
-      color: white;
-    }
-
-    .notif-history {
-      max-width: 800px;
-      margin: 2rem;
-    }
-
-    .notif-history-item:hover{
-      background: #adefb1;
-    }
-
-    .notif-history h2 {
-      color: #1b5e20;
-      margin-bottom: 1rem;
-    }
-
-    .notif-history-item {
-      background: white;
-      border-radius: 10px;
-      padding: 1rem 1.5rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      margin-bottom: 0.75rem;
-      border-left: 4px solid #2e7d32;
-    }
-
-    .notif-history-item .nh-title {
-      font-weight: 600;
-      color: #1b5e20;
-      font-size: 1rem;
-      margin-bottom: 0.3rem;
-    }
-
-    .notif-history-item .nh-msg {
-      color: #444;
-      font-size: 0.9rem;
-      line-height: 1.4;
-    }
-
-    .notif-history-item .nh-time {
-      color: #999;
-      font-size: 0.8rem;
-      margin-top: 0.4rem;
-    }
-
-    .flash-msg {
-      max-width: 600px;
-      margin: 1rem auto 0;
-      padding: 0.8rem 1.2rem;
-      border-radius: 8px;
-      font-weight: 500;
-      text-align: center;
-    }
-
-    .flash-msg.success {
-      background: #e8f5e9;
-      color: #1b5e20;
-      border: 1px solid #a5d6a7;
-    }
-
-    .flash-msg.error {
-      background: #ffebee;
-      color: #c62828;
-      border: 1px solid #ef9a9a;
-    }
-
-    .delete-btn {
-      background: #e53935;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 0.4rem 0.8rem;
-      cursor: pointer;
-      font-size: 0.85rem;
-    }
-    .delete-btn:hover {
-      background: #c62828;
-      border: none;
-      padding: none;
-      color: white;
-    }
-
-    @media (max-width: 768px) {
-      .dashboard-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.75rem;
-        padding: 1rem;
-      }
-
-      .dashboard-card {
-        min-width: 0;
-        padding: 1rem;
-        border-radius: 8px;
-      }
-
-      .dashboard-card .card-label {
-        font-size: 0.68rem;
-        line-height: 1.2;
-        letter-spacing: 0;
-      }
-
-      .dashboard-card .card-value {
-        font-size: 1.6rem;
-        line-height: 1.1;
-      }
-
-      .card-body {
-        font-size: 0.8rem;
-        overflow-wrap: anywhere;
-      }
-
-      .metrics {
-        padding: 0 1rem;
-      }
-
-      .metrics .btn {
-        width: 100%;
-        margin: 0;
-      }
-
-      .notif-form,
-      .notif-history {
-        width: calc(100% - 2rem);
-        max-width: none;
-        margin: 1rem;
-        padding: 1rem;
-        box-sizing: border-box;
-        border-radius: 8px;
-      }
-
-      .notif-form h2,
-      .notif-history h2 {
-        font-size: 1.1rem;
-        line-height: 1.25;
-      }
-
-      .notif-form .btn {
-        width: 100%;
-      }
-
-      .notif-history-item {
-        padding: 0.9rem;
-        border-radius: 8px;
-        overflow-wrap: anywhere;
-      }
-
-      .delete-btn {
-        width: 100%;
-        margin-bottom: 0.6rem;
-      }
-    }
-
-    @media (max-width: 380px) {
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
 </head>
 <body>
   {% set active_sidebar = 'dashboard' %}
@@ -286,9 +17,32 @@
     {% include '_admin_sidebar.html' %}
 
     <div class="admin-content">
+      <div class="dashboard-bell">
+        {% include '_notification_bell.html' %}
+      </div>
+
+      
+      <div class="search-bar">
+        <div class="search-field">
+          <input type="text" id="studentSearch" placeholder="Search by Student Name, Student ID or Group..." oninput="filterStudents()" autocomplete="off">
+          <div id="searchDropdown" class="search-dropdown">
+            {% for s in students %}
+            <div class="search-result">
+              <span class="sr-info">
+                <span class="sr-name">{{ s.student_name }}</span>
+                <span class="sr-meta">Group: {{ s.group_id }} &bull; Student ID: {{ s.student_id }}</span>
+              </span>
+              <span class="sr-entries">{{ s.entries }} {{ 'entry' if s.entries == 1 else 'entries' }}</span>
+            </div>
+            {% endfor %}
+            <div id="noResults" class="no-results">No student matches your search.</div>
+          </div>
+        </div>
+      </div>
+
+
       <div class="head">
-        <h1 class="text">Admin Dashboard</h1>
-        <strong>{{ year }}</strong>
+        <h1 class="text">Dashboard</h1>
       </div>
 
       {% if message %}
@@ -298,53 +52,27 @@
       <div class="dashboard-grid">
 
         <div class="dashboard-card">
-          <span class="card-label">Registered Groups</span>
+          <span class="card-label">Total Groups</span>
           <span class="card-value">{{ total_groups }}</span>
+          <span class="card-description">Active research groups</span>
         </div>
 
         <div class="dashboard-card">
-          <span class="card-label">Registered Students</span>
+          <span class="card-label">Total Students</span>
           <span class="card-value">{{ total_students }}</span>
+          <span class="card-description">Registered students</span>
         </div>
 
         <div class="dashboard-card card-info">
           <span class="card-label">Total Observations</span>
           <span class="card-value">{{ total_observations }}</span>
+          <span class="card-description">Field records collected</span>
         </div>
 
         <div class="dashboard-card">
           <span class="card-label">Total Images</span>
           <span class="card-value">{{ total_images }}</span>
-        </div>
-
-        <div class="dashboard-card card-warning">
-          <span class="card-label">New Species</span>
-          <span class="card-value">{{ new_species_count }}</span>
-        </div>
-
-        <div class="dashboard-card card-danger">
-          <span class="card-label">Archived Datasets</span>
-          <span class="card-value">{{ archive_count }}</span>
-        </div>
-
-        <div class="dashboard-card">
-          <span class="card-label">Recent Archives</span>
-          <div class="card-body">
-            {% if archive_files %}
-            <div class="group-list">
-              <ul>
-                {% for f in archive_files %}
-                <li>{{ f }}</li>
-                {% endfor %}
-              </ul>
-            </div>
-            {% if archive_count > 5 %}
-            <p style="color: #999; margin-top: 0.5rem;">Showing 5 of {{ archive_count }}</p>
-            {% endif %}
-            {% else %}
-            <p style="color: #999;">No archives yet.</p>
-            {% endif %}
-          </div>
+          <span class="card-description">Field images collected</span>
         </div>
 
       </div>
@@ -353,11 +81,57 @@
         <a href='/metrics'>
           <button class='btn'>Metrics</button>
         </a>
+        <button type="button" class='btn' id='openNotifModal'>Send Notification</button>
+          <a href="{{ url_for('admin_research_reports') }}">
+            <button class='research'>Generate Research Report</button>
+          </a>
       </div>
 
+      <div class="overview-charts">
+        <p class="chart-status" id="chartStatus">Loading chart data...</p>
+        <div class="chart-row">
+          <div class="chart-box">
+            <h3>Habitat Composition</h3>
+            <canvas id="habChart"></canvas>
+          </div>
+          <div class="chart-box">
+            <h3>Species Distribution (Top 15)</h3>
+            <canvas id="sppDistChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-table-wrap">
+        <table class="summary-table" aria-label="Activity summary">
+          <caption>Activity Summary</caption>
+          <tbody>
+            <tr class="st-row-warning">
+              <td>New Species</td>
+              <td class="st-count">{{ new_species_count }}</td>
+            </tr>
+            <tr class="st-row-danger">
+              <td>Recent Archives</td>
+              <td class="st-count">{{ archive_count }}</td>
+            </tr>
+            <tr class="st-row-research">
+              <td>Pending Research</td>
+              <td class="st-count">{{ pending_research_count }}</td>
+            </tr>
+            <tr class="st-row-projects">
+              <td>Platform Projects</td>
+              <td class="st-count">{{ projects_count }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-overlay" id="notifModal">
       <div class="notif-form">
-        <h2>Send Notification</h2>
-        <p style="color: #666; margin-bottom: 1rem;">Send a message to all registered groups. You may optionally attach a file (PDF, CSV, PowerPoint, etc.).</p>
+        <div class="notif-form-head">
+          <h2>Send Notification</h2>
+          <button type="button" class="modal-close" id="closeNotifModal" aria-label="Close">&times;</button>
+        </div>
+        <p style="color: #666; margin-bottom: 1rem;">Send a message to all registered groups.</p>
         <form method="POST" action="{{ url_for('admin_dashboard') }}" enctype="multipart/form-data">
           <label for="notif_title">Title</label>
           <input type="text" name="title" id="notif_title" required maxlength="100" placeholder="e.g. Reminder: Field trip tomorrow">
@@ -365,40 +139,157 @@
           <label for="notif_message">Message</label>
           <textarea name="message" id="notif_message" required placeholder="Write your message here..."></textarea>
 
-          <label for="notif_attachment">Attachment (optional)</label>
+          <label for="notif_attachment">Attachment (optional): PDF, CSV, PowerPoint etc.</label>
           <input type="file" name="attachment" id="notif_attachment" accept=".csv,.pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.zip,.png,.jpg,.jpeg">
 
           <button type="submit" class="btn">Send Notification</button>
         </form>
       </div>
-
-      <div class="notif-history">
-        <h2>Sent Notification History</h2>
-        {% if sent_notifications %}
-          <p style="color: #666; margin-top: -0.5rem; margin-bottom: 1rem; margin-left: 1rem;">Showing the latest {{ sent_notifications|length }} notification{{ '' if sent_notifications|length == 1 else 's' }} sent by admin.</p>
-        {% endif %}
-        {% if sent_notifications %}
-          {% for n in sent_notifications %}
-          <div class="notif-history-item">
-            <form action="{{ url_for('delete_notif', notif_history=n.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this notification? NOTE: This will delete the notification for students as well');" style="margin: 0;">
-                <button type="submit" class="delete-btn">Delete</button>
-              </form>
-            <div class="nh-title">{{ n.title }}</div>
-            <div class="nh-msg">{{ n.message }}</div>
-            {% if n.attachment_file %}
-            <div class="nh-attachment" style="margin-top:0.3rem;font-size:0.85rem;">
-              <a href="{{ url_for('download_notification_attachment', notification_id=n.id) }}" target="_blank" style="color:#2e7d32;text-decoration:underline;">[Attachment] {{ n.attachment_original_name or n.attachment_file }}</a>
-            </div>
-            {% endif %}
-            <div class="nh-time">{{ n.created_at }}</div>
-          </div>
-          {% endfor %}
-        {% else %}
-          <p style="color: #999; text-align: center; padding: 1rem;">No notifications sent yet.</p>
-        {% endif %}
       </div>
-    </div>
+
+      </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var openBtn = document.getElementById('openNotifModal');
+      var modal = document.getElementById('notifModal');
+      var closeBtn = document.getElementById('closeNotifModal');
+
+      function openModal() {
+        if (modal) modal.classList.add('open');
+      }
+
+      function closeModal() {
+        if (modal) modal.classList.remove('open');
+      }
+
+      if (openBtn) openBtn.addEventListener('click', openModal);
+      if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) closeModal();
+        });
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') closeModal();
+        });
+      }
+    });
+  </script>
+
+  <script>
+  var OVERVIEW_COLORS = ['#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e',
+                        '#e6ab02','#a6761d','#666666','#2e7d32','#1565c0',
+                        '#6a1b9a','#c62828'];
+
+  function loadOverviewCharts() {
+    var status = document.getElementById('chartStatus');
+
+    function fail(msg) {
+      status.textContent = msg;
+      status.classList.add('chart-error');
+    }
+
+    if (typeof Chart === 'undefined') {
+      fail('Chart library unavailable.');
+      return;
+    }
+
+    fetch('/api/metrics')
+      .then(function(res) {
+        return res.json().then(function(body) {
+          if (!res.ok) throw new Error(body.error || ('HTTP ' + res.status));
+          return body;
+        });
+      })
+      .then(function(data) {
+        var o = data.overview || {};
+        var habitat = o.habitat_composition || [];
+        var species = o.species_distribution || [];
+
+        if (!habitat.length && !species.length) {
+          fail('No species data available yet.');
+          return;
+        }
+        status.style.display = 'none';
+
+        new Chart(document.getElementById('habChart'), {
+          type: 'bar',
+          data: {
+            labels: habitat.map(function(d) { return d.habitat; }),
+            datasets: [{
+              label: 'Count',
+              data: habitat.map(function(d) { return d.count; }),
+              backgroundColor: OVERVIEW_COLORS.slice(0, habitat.length),
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
+        });
+
+        new Chart(document.getElementById('sppDistChart'), {
+          type: 'doughnut',
+          data: {
+            labels: species.map(function(d) { return d.species; }),
+            datasets: [{
+              data: species.map(function(d) { return d.count; }),
+              backgroundColor: OVERVIEW_COLORS,
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } }
+          }
+        });
+      })
+      .catch(function(err) { fail('Error loading charts: ' + err.message); });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadOverviewCharts);
+  </script>
+
+  <script>
+  function filterStudents() {
+    var input = document.getElementById('studentSearch');
+    var dropdown = document.getElementById('searchDropdown');
+    var rows = document.querySelectorAll('.search-result');
+    var noResults = document.getElementById('noResults');
+    var filter = input.value.toLowerCase().trim();
+    var visibleCount = 0;
+
+    if (!filter) {
+      dropdown.classList.remove('open');
+      noResults.style.display = 'none';
+      return;
+    }
+
+    dropdown.classList.add('open');
+
+    rows.forEach(function(row) {
+      var text = row.textContent.toLowerCase();
+      if (text.indexOf(filter) !== -1) {
+        row.classList.remove('hidden-by-search');
+        visibleCount++;
+      } else {
+        row.classList.add('hidden-by-search');
+      }
+    });
+
+    noResults.style.display = (visibleCount === 0) ? 'block' : 'none';
+  }
+
+  document.addEventListener('click', function(e) {
+    var bar = document.querySelector('.search-bar');
+    if (bar && !bar.contains(e.target)) {
+      document.getElementById('searchDropdown').classList.remove('open');
+    }
+  });
+  </script>
 
 </body>
 </html>

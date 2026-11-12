@@ -391,7 +391,11 @@ footer {
 }
 
 .text{
-    text-align: center;
+    text-align: left;
+    font-size: 25px;
+    padding-left: 5px;
+    padding-bottom: none;
+    color: #011E14;
 }
 
 .idea{
@@ -835,7 +839,7 @@ div .manual_input{
   left: 0;
   width: 250px;
   height: 100vh;
-  background: #1b5e20;
+  background: #013315;
   color: white;
   display: flex;
   flex-direction: column;
@@ -893,14 +897,14 @@ div .manual_input{
 }
 
 .sidebar-link:hover {
-  background: rgba(255,255,255,0.15);
+  background: #011E14;
   color: white;
 }
 
 .sidebar-link.active {
-  background: white;
-  color: #1b5e20;
-  font-weight: 600;
+  background: #166534;
+  color: white;
+  border-left: 2px solid #22C55E;
 }
 
 .sidebar-logout {
@@ -1549,7 +1553,7 @@ div .manual_input{
 
 .dark-mode .help-container {
   background: #000000 !important;
-  border-color: #1a1a1a !important;
+  border-color: #a5e698 !important;
 }
 
 .dark-mode .help-container h2 {
@@ -1738,4 +1742,12 @@ div .manual_input{
 .dark-mode .head .text,
 .dark-mode .head h1 {
   color: #e2e8f0;
+}
+
+.dark-mode .project-title{
+  color: white;
+}
+
+.dark-mode .research-title{
+  color: white;
 }

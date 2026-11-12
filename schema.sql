@@ -85,7 +85,22 @@ CREATE TABLE IF NOT EXISTS archives (
   record_count INTEGER DEFAULT 0
 );
 
--- 7. reports: student-submitted issue reports
+-- 8. research_posts: user-submitted research work
+CREATE TABLE IF NOT EXISTS research_posts (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  title TEXT NOT NULL,
+  authors TEXT NOT NULL,
+  email TEXT,
+  institution TEXT,
+  abstract TEXT NOT NULL,
+  category TEXT,
+  document_file TEXT,
+  document_original_name TEXT,
+  created_at TEXT,
+  created_at_ts TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. reports: student-submitted issue reports
 CREATE TABLE IF NOT EXISTS reports (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   reporter_name TEXT NOT NULL,
@@ -115,6 +130,7 @@ ALTER TABLE observations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notification_reads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE archives ENABLE ROW LEVEL SECURITY;
+ALTER TABLE research_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read/write access (matching current app behavior)
@@ -124,4 +140,5 @@ CREATE POLICY "Allow all" ON observations FOR ALL USING (true) WITH CHECK (true)
 CREATE POLICY "Allow all" ON notifications FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON notification_reads FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON archives FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON research_posts FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON reports FOR ALL USING (true) WITH CHECK (true);

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}?v={{ cache_bust }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ai_identify.css') }}?v={{ cache_bust }}">
+  <link rel="icon" href="/static/images/icon-192x192.png">
+  <meta name="theme-color" content="#2ecc71">
+  <title>AI Identification &bull; EcoField Logger</title>
+</head>
+<body>
+
+  <!-- ===== NAVIGATION ===== -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <h5>University of Ghana &bull; School of Biological Sciences</h5>
+      {%if session.get('user_role')=='student'%}
+      <h2 class="user">STUDENT USER</h2>
+      {%endif%}
+      {%if session.get('user_role')=='admin'%}
+      <h2 class="user">ADMIN USER</h2>
+      {%endif%}
+      <div class="nav-links">
+        <a href="/home" class="active">Home</a>
+        {%if session.get('user_role')=='admin'%}
+        <a href="/admin/view_archive">Admin</a>
+        {%endif%}
+        <a href="/help">Help</a>
+        {% if session.get('user_role')=='student'%}
+         {% include '_notification_bell.html' %}
+         {%endif%}
+        <a id="install-btn" style="display:none; background:none;" class="gps-btn">Install</a>
+        <a href="/" style="background-color: red; color: white;">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== HEADER ===== -->
+  <div class="header ai-header">
+    <h1>AI Species & Habitat Identification</h1>
+    <h4 class="head_text_overlay">
+      Automated species identification from photos &amp; AI-powered habitat classification
+    </h4>
+  </div>
+
+  <main class="ai-main">
+    {% if not ai_available %}
+    <div class="ai-warning">
+      <strong>AI service not configured.</strong> An administrator needs to set the
+      <code>GEMINI_API_KEY</code> environment variable for AI identification to work.
+    </div>
+    {% endif %}
+
+    <section class="ai-card">
+      <h2>Upload a Field Photo</h2>
+      <p class="ai-subtitle">
+        EcoField will use AI to identify the species shown and classify the species habitat.
+        Best results come from clear photograph of your specimen. 
+      </p>
+
+      <div class="ai-controls">
+        <div class="ai-upload">
+          <label class="ai-file-btn" for="ai-photo" id="ai-file-btn">📷 Choose Photo</label>
+          <input type="file" id="ai-photo" accept="image/*" hidden>
+          <span class="ai-file-name" id="ai-file-name">No photo selected</span>
+        </div>
+
+        <div class="ai-options">
+          <label><input type="radio" name="analysis_type" value="both" checked> Species + Habitat</label>
+          <label><input type="radio" name="analysis_type" value="species"> Species only</label>
+          <label><input type="radio" name="analysis_type" value="habitat"> Habitat only</label>
+        </div>
+
+        <button id="ai-analyze-btn" class="ai-analyze-btn" disabled
+          {% if ai_available %}data-ai-available="true"{% endif %}>
+          Analyze Photo
+        </button>
+      </div>
+
+      <div id="ai-preview" class="ai-preview" hidden>
+        <img id="ai-preview-img" alt="Selected photo preview">
+      </div>
+    </section>
+
+    <section id="ai-results" class="ai-results" hidden>
+      <div class="ai-loading" id="ai-loading" hidden>
+        <div class="ai-spinner"></div>
+        <p>Analyzing your photo with AI... This can take up to a minute. Please wait.</p>
+      </div>
+      <div id="ai-error" class="ai-error" hidden></div>
+
+      <div id="ai-species-section" hidden>
+        <h2><span class="ai-section-icon"></span> Species Identification</h2>
+        <div id="ai-species-list" class="ai-species-list"></div>
+        <p id="ai-species-summary" class="ai-summary"></p>
+      </div>
+
+      <div id="ai-habitat-section" hidden>
+        <h2><span class="ai-section-icon"></span> Habitat Classification</h2>
+        <div id="ai-habitat-body" class="ai-habitat-body"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== AI VERIFICATION MODAL ===== -->
+  <div class="ai-modal-overlay" id="ai-modal-overlay" hidden>
+    <div class="ai-modal" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
+      <h3 id="ai-modal-title">PLEASE NOTE</h3>
+      <p class="ai-modal-text">
+        EcoField uses AI to provide preliminary species and habitat identifications from submitted
+        photographs. These results are intended as <strong>research assistance and fieldwork guidance</strong>.
+      </p>
+      <p class="ai-modal-text">
+        Please verify the identification with a lecturer, taxonomist, researcher, or other qualified
+        expert before using it in an academic report, publication, or formal research output.
+      </p>
+      <label class="ai-modal-check">
+        <input type="checkbox" id="ai-verify-check">
+        <span>I understand that AI identification requires expert verification.</span>
+      </label>
+      <p class="ai-modal-error" id="ai-modal-error" hidden>Please check the box to confirm before continuing.</p>
+      <div class="ai-modal-actions">
+        <button type="button" id="ai-modal-cancel" class="ai-btn-secondary">Cancel</button>
+        <button type="button" id="ai-modal-submit" class="ai-analyze-btn">OK, Analyze</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <p class="copyright"> &copy;
+        EcoField Logger by <a href="/profile" style="color: white;">MiltonPixel</a> — Department of Animal Biology and Conservation Science (UG)</p>
+  </footer>
+
+  <script>
+  (function() {
+    var fileInput = document.getElementById('ai-photo');
+    var fileName = document.getElementById('ai-file-name');
+    var fileBtn = document.getElementById('ai-file-btn');
+    var preview = document.getElementById('ai-preview');
+    var previewImg = document.getElementById('ai-preview-img');
+    var analyzeBtn = document.getElementById('ai-analyze-btn');
+    var loading = document.getElementById('ai-loading');
+    var errorBox = document.getElementById('ai-error');
+    var results = document.getElementById('ai-results');
+
+    var selectedFile = null;
+
+    fileBtn.addEventListener('click', function() { fileInput.click(); });
+    fileInput.addEventListener('change', function() {
+      if (fileInput.files && fileInput.files.length > 0) {
+        selectedFile = fileInput.files[0];
+        fileName.textContent = selectedFile.name;
+        previewImg.src = URL.createObjectURL(selectedFile);
+        preview.hidden = false;
+        errorBox.hidden = true;
+        errorBox.textContent = '';
+        if (analyzeBtn.dataset.aiAvailable === 'true') {
+          analyzeBtn.disabled = false;
+        }
+      }
+    });
+
+    function getAnalysisType() {
+      var radios = document.querySelectorAll('input[name="analysis_type"]');
+      for (var i = 0; i < radios.length; i++) {
+        if (radios[i].checked) return radios[i].value;
+      }
+      return 'both';
+    }
+
+    function clearResults() {
+      document.getElementById('ai-species-section').hidden = true;
+      document.getElementById('ai-habitat-section').hidden = true;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, function(c) {
+        return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+      });
+    }
+
+    function renderSpecies(speciesList, summary) {
+      var container = document.getElementById('ai-species-list');
+      var section = document.getElementById('ai-species-section');
+      var summaryEl = document.getElementById('ai-species-summary');
+
+      if (!speciesList || speciesList.length === 0) {
+        container.innerHTML = '<p class="ai-empty">No species could be confidently identified from this photo.</p>';
+        summaryEl.textContent = summary || '';
+      } else {
+        var html = '';
+        speciesList.forEach(function(s) {
+          var conf = Math.round((s.confidence || 0) * 100);
+          html += '<div class="ai-species-item">';
+          html += '<div class="ai-species-head">';
+          html += '<strong>' + escapeHtml(s.common_name || 'Unknown') + '</strong>';
+          html += '<span class="ai-confidence" style="--conf:' + conf + '">' + conf + '%</span>';
+          html += '</div>';
+          if (s.scientific_name) html += '<em class="ai-scientific">' + escapeHtml(s.scientific_name) + '</em>';
+          if (s.family) html += '<span class="ai-family">Family: ' + escapeHtml(s.family) + '</span>';
+          if (s.notes) html += '<p class="ai-notes">' + escapeHtml(s.notes) + '</p>';
+          html += '</div>';
+        });
+        container.innerHTML = html;
+        summaryEl.textContent = summary || '';
+      }
+      section.hidden = false;
+    }
+
+    function renderHabitat(h) {
+      var section = document.getElementById('ai-habitat-section');
+      var body = document.getElementById('ai-habitat-body');
+      if (!h) { section.hidden = true; return; }
+
+      var conf = Math.round((h.confidence || 0) * 100);
+      var rows = [
+        ['Habitat Type', h.habitat_type],
+        ['Vegetation', h.vegetation],
+        ['Soil / Substrate', h.soil_or_substrate],
+        ['Climate Indicators', h.climate_indicators],
+      ];
+      var html = '<div class="ai-habitat-head"><strong>' + escapeHtml(h.habitat_type || 'Unknown') +
+                 '</strong><span class="ai-confidence" style="--conf:' + conf + '">' + conf + '%</span></div>';
+      html += '<table class="ai-habitat-table">';
+      rows.forEach(function(r) {
+        if (r[1]) html += '<tr><td>' + escapeHtml(r[0]) + '</td><td>' + escapeHtml(r[1]) + '</td></tr>';
+      });
+      html += '</table>';
+      if (h.notes) html += '<p class="ai-notes">' + escapeHtml(h.notes) + '</p>';
+      body.innerHTML = html;
+      section.hidden = false;
+    }
+
+    analyzeBtn.addEventListener('click', function() {
+      if (!selectedFile) { return; }
+      if (analyzeBtn.disabled) { return; }
+      openVerifyModal();
+    });
+
+    function openVerifyModal() {
+      var overlay = document.getElementById('ai-modal-overlay');
+      var check = document.getElementById('ai-verify-check');
+      var errorEl = document.getElementById('ai-modal-error');
+      check.checked = false;
+      errorEl.hidden = true;
+      overlay.hidden = false;
+      check.focus();
+    }
+
+    function closeVerifyModal() {
+      document.getElementById('ai-modal-overlay').hidden = true;
+    }
+
+    document.getElementById('ai-modal-cancel').addEventListener('click', closeVerifyModal);
+    document.getElementById('ai-modal-overlay').addEventListener('click', function(e) {
+      if (e.target === this) closeVerifyModal();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeVerifyModal();
+    });
+
+    document.getElementById('ai-modal-submit').addEventListener('click', function() {
+      var check = document.getElementById('ai-verify-check');
+      var errorEl = document.getElementById('ai-modal-error');
+      if (!check.checked) {
+        errorEl.hidden = false;
+        return;
+      }
+      closeVerifyModal();
+      runAnalysis();
+    });
+
+    function runAnalysis() {
+      errorBox.hidden = true;
+      errorBox.textContent = '';
+      loading.hidden = false;
+      results.hidden = false;
+      clearResults();
+
+      var formData = new FormData();
+      formData.append('photo', selectedFile);
+      formData.append('analysis_type', getAnalysisType());
+
+      var controller = new AbortController();
+      var timeoutId = setTimeout(function() { controller.abort(); }, 120000);
+
+      fetch('/api/ai-identify', { method: 'POST', body: formData, signal: controller.signal })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+        .then(function(res) {
+          clearTimeout(timeoutId);
+          loading.hidden = true;
+          if (!res.ok) {
+            errorBox.textContent = res.data.error || 'Something went wrong. Please try again.';
+            errorBox.hidden = false;
+            return;
+          }
+          var d = res.data;
+          if (d.species) renderSpecies(d.species, d.species_summary);
+          if (d.habitat) renderHabitat(d.habitat);
+        })
+        .catch(function() {
+          clearTimeout(timeoutId);
+          loading.hidden = true;
+          errorBox.textContent = 'Request timed out or failed. The AI service may be busy. Please try again.';
+          errorBox.hidden = false;
+        });
+    }
+  })();
+  </script>
+</body>
+</html>

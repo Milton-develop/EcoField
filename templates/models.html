@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EcoField | AI Models</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}?v={{ cache_bust }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ai_identify.css') }}?v={{ cache_bust }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/models.css') }}?v={{ cache_bust }}" />
+    <link rel="icon" href="/static/images/icon-192x192.png" />
+</head>
+<body>
+
+    <div class="models-hero">
+        <nav>
+            <div class="nav-bar">
+                <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Open navigation">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                <div class="nav-brand">
+                    <img src="/static/images/crest.png" alt="University of Ghana" class="nav-crest">
+                    <div class="nav-brand-text">
+                        <span class="nav-uni-name">University of Ghana</span>
+                        <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+                    </div>
+                </div>
+                <div class="nav-links desktop-nav">
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/research">Research</a></li>
+                        <li><a href="/explore">Explore</a></li>
+                        <li><a href="/projects">Projects</a></li>
+                        <li><a href="/models" class="active">Models</a></li>
+                        <li><a href="/about">About</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="mobile-sidebar-overlay" id="mobileSidebarOverlay"></div>
+        <div class="mobile-sidebar" id="mobileSidebar">
+            <div class="mobile-sidebar-brand">
+                <img src="/static/images/crest.png" alt="University of Ghana" class="nav-crest">
+                <div class="nav-brand-text">
+                    <span class="nav-uni-name">University of Ghana</span>
+                    <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+                </div>
+                <button class="mobile-sidebar-close" id="mobileSidebarClose" aria-label="Close navigation">
+                    <span class="close-line"></span>
+                    <span class="close-line"></span>
+                </button>
+            </div>
+            <nav class="mobile-sidebar-nav">
+                <a href="/" class="mobile-sidebar-link">Home</a>
+                <a href="/research" class="mobile-sidebar-link">Research</a>
+                <a href="/explore" class="mobile-sidebar-link">Explore</a>
+                <a href="/projects" class="mobile-sidebar-link">Projects</a>
+                <a href="/models" class="mobile-sidebar-link active">Models</a>
+                <a href="/about" class="mobile-sidebar-link">About</a>
+            </nav>
+        </div>
+
+        <div class="models-hero-content">
+            <h1>EcoField <span style="color: #37b23e">AI Models</span></h1>
+            <p>Intelligent tools that turn field observations into ecological insight from
+                identifying species in photographs to understanding the soundscapes around us.</p>
+        </div>
+    </div>
+
+    <section class="models-intro">
+        <h2>Models Built for Fieldwork</h2>
+        <p>
+            EcoField is expanding its ecological intelligence with purpose-built AI models that
+            support students, researchers, and conservation teams in the field. These models are
+            designed to work alongside EcoField Logger, helping you capture richer data with less
+            effort and greater confidence.
+        </p>
+    </section>
+
+    <section class="models-grid-section">
+        <div class="models-grid">
+
+            <article class="model-card">
+                <div class="model-card-top">
+                    <span class="model-icon"></span>
+                    <span class="model-status available">Available</span>
+                </div>
+                <h2>AI Species Identification</h2>
+                <p>
+                    Upload a field photograph and EcoField identifies the likely species and
+                    classifies the surrounding habitat. Each result includes confidence scores,
+                    supporting notes, and a reminder to verify findings with a qualified expert.
+                </p>
+                <ul class="model-features">
+                    <li>Species identification from photos</li>
+                    <li>Habitat classification</li>
+                    <li>Confidence scores and field notes</li>
+                </ul>
+                {% if ai_available %}
+                <button type="button" id="launch-ai-btn" class="model-btn">Launch Identification</button>
+                {% else %}
+                <span class="model-btn disabled" title="An administrator must configure the AI service">Currently Unavailable</span>
+                {% endif %}
+            </article>
+
+            <article class="model-card coming-soon">
+                <div class="model-card-top">
+                    <span class="model-icon"></span>
+                    <span class="model-status soon">Coming Soon</span>
+                </div>
+                <h2>Bioacoustics</h2>
+                <p>
+                    Automated identification of species from their sounds. Bioacoustics will
+                    support acoustic surveys of birds, frogs, insects, and other vocal wildlife,
+                    making it easier to monitor biodiversity in dense habitats and at night.
+                </p>
+                <ul class="model-features">
+                    <li>Bird call and amphibian recognition</li>
+                    <li>Acoustic species richness estimates</li>
+                    <li>Passive soundscape monitoring</li>
+                </ul>
+                <span class="model-btn disabled">In Development</span>
+            </article>
+
+        </div>
+    </section>
+
+    <section id="ai-tool-panel" class="ai-tool-panel" hidden>
+        <div class="ai-tool-header">
+            <h2>AI Species Identification</h2>
+            <button type="button" class="ai-tool-close" id="close-ai-tool" aria-label="Close AI identification">&times;</button>
+        </div>
+
+        {% if not ai_available %}
+        <div class="ai-warning">
+            <strong>AI service not configured.</strong> An administrator needs to set the
+            <code>GEMINI_API_KEY</code> environment variable for AI identification to work.
+        </div>
+        {% endif %}
+
+        <section class="ai-card">
+            <h2>Upload a Field Photo</h2>
+            <p class="ai-subtitle">
+                EcoField will use AI to identify the species shown and classify the species habitat.
+                Best results come from a clear photograph of your specimen.
+            </p>
+
+            <div class="ai-controls">
+                <div class="ai-upload">
+                    <label class="ai-file-btn" for="ai-photo" id="ai-file-btn">📷 Choose Photo</label>
+                    <input type="file" id="ai-photo" accept="image/*" hidden>
+                    <span class="ai-file-name" id="ai-file-name">No photo selected</span>
+                </div>
+
+                <div class="ai-options">
+                    <label><input type="radio" name="analysis_type" value="both" checked> Species + Habitat</label>
+                    <label><input type="radio" name="analysis_type" value="species"> Species only</label>
+                    <label><input type="radio" name="analysis_type" value="habitat"> Habitat only</label>
+                </div>
+
+                <button id="ai-analyze-btn" class="ai-analyze-btn" disabled
+                    {% if ai_available %}data-ai-available="true"{% endif %}>
+                    Analyze Photo
+                </button>
+            </div>
+
+            <div id="ai-preview" class="ai-preview" hidden>
+                <img id="ai-preview-img" alt="Selected photo preview">
+            </div>
+        </section>
+
+        <section id="ai-results" class="ai-results" hidden>
+            <div class="ai-loading" id="ai-loading" hidden>
+                <div class="ai-spinner"></div>
+                <p>Analyzing your photo with AI... This can take up to a minute. Please wait.</p>
+            </div>
+            <div id="ai-error" class="ai-error" hidden></div>
+
+            <div id="ai-species-section" hidden>
+                <h2><span class="ai-section-icon"></span> Species Identification</h2>
+                <div id="ai-species-list" class="ai-species-list"></div>
+                <p id="ai-species-summary" class="ai-summary"></p>
+            </div>
+
+            <div id="ai-habitat-section" hidden>
+                <h2><span class="ai-section-icon"></span> Habitat Classification</h2>
+                <div id="ai-habitat-body" class="ai-habitat-body"></div>
+            </div>
+        </section>
+    </section>
+
+    <div class="ai-modal-overlay" id="ai-modal-overlay" hidden>
+        <div class="ai-modal" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
+            <h3 id="ai-modal-title">PLEASE NOTE</h3>
+            <p class="ai-modal-text">
+                EcoField uses AI to provide preliminary species and habitat identifications from submitted
+                photographs. These results are intended as <strong>research assistance and fieldwork guidance</strong>.
+            </p>
+            <p class="ai-modal-text">
+                Please verify the identification with a lecturer, taxonomist, researcher, or other qualified
+                expert before using it in an academic report, publication, or formal research output.
+            </p>
+            <label class="ai-modal-check">
+                <input type="checkbox" id="ai-verify-check">
+                <span>I understand that AI identification requires expert verification.</span>
+            </label>
+            <p class="ai-modal-error" id="ai-modal-error" hidden>Please check the box to confirm before continuing.</p>
+            <div class="ai-modal-actions">
+                <button type="button" id="ai-modal-cancel" class="ai-btn-secondary">Cancel</button>
+                <button type="button" id="ai-modal-submit" class="ai-analyze-btn">OK, Analyze</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <h3>EcoField</h3>
+                <p>Proudly developed at the University of Ghana (Department of Animal
+                    Biology and Conservation Science) and built to serve researchers,
+                    institutions, and conservation organizations everywhere.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/research">Research</a></li>
+                    <li><a href="/explore">Explore</a></li>
+                    <li><a href="/projects">Projects</a></li>
+                    <li><a href="/models">Models</a></li>
+                    <li><a href="/about">About</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <ul>
+                    <li><a href="mailto:hello.miltonpixel@gmail.com">Email</a></li>
+                    <li><a href="#">Support Center</a></li>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 EcoField by <a href="/about#developer" style="color: #666;">MiltonPixel</a>. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var toggle = document.getElementById('mobileNavToggle');
+        var close = document.getElementById('mobileSidebarClose');
+        var sidebar = document.getElementById('mobileSidebar');
+        var overlay = document.getElementById('mobileSidebarOverlay');
+
+        function openSidebar() {
+          sidebar.classList.add('open');
+          overlay.classList.add('open');
+          toggle.classList.add('open');
+        }
+
+        function closeSidebar() {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('open');
+          toggle.classList.remove('open');
+        }
+
+        if (toggle) toggle.addEventListener('click', openSidebar);
+        if (close) close.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
+
+        var launchAiBtn = document.getElementById('launch-ai-btn');
+        var aiToolPanel = document.getElementById('ai-tool-panel');
+        var closeAiBtn = document.getElementById('close-ai-tool');
+
+        if (launchAiBtn && aiToolPanel) {
+          launchAiBtn.addEventListener('click', function() {
+            aiToolPanel.hidden = false;
+            aiToolPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }
+
+        if (closeAiBtn && aiToolPanel) {
+          closeAiBtn.addEventListener('click', function() {
+            aiToolPanel.hidden = true;
+            if (launchAiBtn) {
+              launchAiBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          });
+        }
+      });
+    </script>
+    <script src="{{ url_for('static', filename='js/ai_identify.js') }}?v={{ cache_bust }}"></script>
+</body>
+</html>

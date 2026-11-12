@@ -1,39 +1,418 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoField | Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_bust }}">
-    <link rel="icon" href="/static/images/icon-192x192.png">
-    <style>
-        .login-box { max-width: 400px; margin: 100px auto; padding: 20px; border: 1px solid #34a03a; border-radius: 8px; text-align: center; }
-        .login-btn { width: 100%; padding: 10px; margin-top: 10px; background: #37ae68; border: none; color: white; cursor: pointer; }
-    </style>
-</head>
-<body>
-    <div class="login-box">
-        <h2>Welcome to <strong>EcoField Logger</strong></h2>
-        <p>Please identify your role to continue</p>
-        <form method="POST" id="login-form">
-            <input type="text" name="username" placeholder="Enter 'student' or 'admin'" required style="width: 90%; padding: 10px;">
-            {% if error %}<p style="color: red;">{{ error }}</p>{% endif %}
-            <button type="submit" class="login-btn">Enter Platform</button>
-        </form>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EcoField</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/login.css') }}?v={{ cache_bust }}"
+    />
+    <link rel="icon" href="/static/images/icon-192x192.png" />
+  </head>
+  <body>
+    <div id="status-indicator" class="status-indicator"></div>
+    <header class="header">
+      <nav>
+        <div class="nav-bar">
+          <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Open navigation">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+          </button>
+          <div class="nav-brand">
+            <img src="/static/images/crest.png" alt="University of Ghana" class="nav-crest">
+            <div class="nav-brand-text">
+              <span class="nav-uni-name">University of Ghana</span>
+              <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+            </div>
+          </div>
+          <div class="nav-links desktop-nav">
+            <ul>
+              <li><a href='/' class='active'>Home</a></li>
+              <li><a href='/research'>Research</a></li>
+              <li><a href='/explore'>Explore</a></li>
+              <li><a href='/projects'>Projects</a></li>
+              <li><a href='/models'>Models</a></li>
+              <li><a href='/about'>About</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
 
-    <script>
-    document.getElementById('login-form').addEventListener('submit', function(e) {
-        if (!navigator.onLine) {
-            e.preventDefault();
-            var role = this.querySelector('input[name="username"]').value.trim().toLowerCase();
-            if (role === 'student' || role === 'admin') {
-                localStorage.setItem('ecofield_role', role);
-                window.location.href = '/home';
-            }
-        }
-    });
-    </script>
+      <div class="mobile-sidebar-overlay" id="mobileSidebarOverlay"></div>
+      <div class="mobile-sidebar" id="mobileSidebar">
+        <div class="mobile-sidebar-brand">
+          <img src="/static/images/crest.png" alt="University of Ghana" class="nav-crest">
+          <div class="nav-brand-text">
+            <span class="nav-uni-name">University of Ghana</span>
+            <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+          </div>
+          <button class="mobile-sidebar-close" id="mobileSidebarClose" aria-label="Close navigation">
+            <span class="close-line"></span>
+            <span class="close-line"></span>
+          </button>
+        </div>
+        <nav class="mobile-sidebar-nav">
+          <a href='/' class='mobile-sidebar-link active'>Home</a>
+          <a href='/research' class='mobile-sidebar-link'>Research</a>
+          <a href='/explore' class='mobile-sidebar-link'>Explore</a>
+          <a href='/projects' class='mobile-sidebar-link'>Projects</a>
+          <a href='/models' class='mobile-sidebar-link'>Models</a>
+          <a href='/about' class='mobile-sidebar-link'>About</a>
+        </nav>
+      </div>
+      <div class="head">
+        <h1>
+          A Unified <span style="color: #37b23e">Platform</span> for <span style="color: #37b23e">Biodiversity</span> Research and
+          <span style="color: #37b23e">Conservation</span>
+        </h1>
+        <p>
+          Collect field observations, manage research projects, explore species records, 
+          and generate ecological insights all within a connected digital ecosystem 
+          powered by EcoField Logger.
+        </p>
+        <div class="buttons">
+          <a href="#" class="home" id="start-logging-btn">Start Logging</a>
+          <a href="#" class="demo">Watch Demo</a>
+        </div>
+      </div>
+    </header>
+
+    <div class='about'>
+      <img src='/static/images/nature.jpg' class='nature'>
+      <section class="platform-overview">
+  <h1 style='color: #2e7d32'>Built as an Ecological Intelligence Platform</h1>
+
+  <p>
+    EcoField is an ecological intelligence platform that brings together field
+data collection, biodiversity records, research collaboration, ecological
+analytics, and conservation knowledge into one connected ecosystem.
+Whether you're documenting species in the field or analyzing years of
+research, EcoField provides the tools to transform observations into
+meaningful environmental insights.
+  </p>
+
+  <ul>
+    <li>Offline-first field data collection with EcoField Logger</li>
+    <li>Centralized biodiversity database and research repository</li>
+    <li>Interactive analytics and ecological insights</li>
+    <li>Species explorer with searchable biodiversity records</li>
+    <li>Collaboration tools for institutions and conservation teams</li>
+  </ul>
+</section>
     </div>
-</body>
+
+    <div class='data'>
+      <div class='sub-data'>
+        <h1>100+</h1>
+        <p>Student Groups Registered</p>
+      </div>
+      <div class='sub-data'>
+        <h1>1000+</h1>
+        <p>Field Records Collected</p>
+      </div>
+      <div class='sub-data'>
+        <h1>90%</h1>
+        <p>Offline Storage Reliabilty</p>
+      </div>
+      <div class='sub-data'>
+        <h1>95%</h1>
+        <p>Data Sync Success Rate</p>
+      </div>
+    </div>
+
+    <section class="use-cases">
+
+    <h1>Who Can Use EcoField?</h1>
+
+    <p>
+        EcoField is designed for everyone involved in biodiversity research,
+        environmental monitoring, and conservation. From students carrying
+        out field exercises to organizations making national conservation
+        decisions, EcoField adapts to every stage of ecological research.
+    </p>
+
+    <div class="use-case-grid">
+
+        <div class="use-card" id='uni'>
+            <span class='logo'><img src='/static/images/uni.png' class='image'></span>
+            <h2>Universities</h2>
+            <p>
+                Manage student fieldwork, collect standardized observations,
+                and simplify ecological practical sessions.
+            </p>
+        </div>
+
+        <div class="use-card" id='research'>
+            <span class='logo'><img src='/static/images/research.png' class='image'></span>
+            <h2>Researchers</h2>
+            <p>
+                Record biodiversity observations, organize datasets,
+                and collaborate across research projects.
+            </p>
+        </div>
+
+        <div class="use-card" id='conservation'>
+            <span class='logo'><img src='/static/images/conservation.png' class='image'></span>
+            <h2>Conservation Organizations</h2>
+            <p>
+                Monitor habitats, track species populations,
+                and support conservation initiatives.
+            </p>
+        </div>
+
+        <div class="use-card" id='agency'>
+            <span class='logo'><img src='/static/images/bank.png' class='image'></span>
+            <h2>Government Agencies</h2>
+            <p>
+                Access biodiversity data to support environmental planning,
+                policy development, and ecological monitoring.
+            </p>
+        </div>
+
+        <div class="use-card" id='specialist'>
+            <span class='logo'><img src='/static/images/graph.png' class='image'></span>
+            <h2>Environmental Consultants</h2>
+            <p>
+                Collect field evidence and generate reliable datasets for
+                ecological assessments and reports.
+            </p>
+        </div>
+
+        <div class="use-card" id='citizen'>
+            <span class='logo'><img src='/static/images/globe.png' class='image'></span>
+            <h2>Citizen Science</h2>
+            <p>
+                Future support for public biodiversity observations that
+                contribute to national ecological databases.
+            </p>
+        </div>
+
+    </div>
+
+</section>
+
+    <div class='card'>
+      <img src='/static/images/laptop.png'>
+      <section class="platform-capabilities">
+  <h1 style="color: #2e7d32;">Powerful Platform Capabilities</h1>
+
+  <p class='intro'>
+    EcoField combines intelligent field data collection, biodiversity
+    management, ecological analytics, and institutional collaboration into
+    one connected ecosystem. Whether you're a student, researcher,
+    conservation organization, or government agency, the platform is built
+    to simplify how ecological data is collected, managed, and transformed
+    into meaningful insights.
+  </p>
+
+  <ul>
+    <li>Offline-first field data collection with EcoField Logger</li>
+    <li>Centralized biodiversity database for long-term record keeping</li>
+    <li>Interactive dashboards with biodiversity metrics and ecological analytics</li>
+    <li>Species explorer for searching and discovering biodiversity records</li>
+    <li>Research repository for reports, publications, and field studies</li>
+    <li>Secure collaboration tools for universities and conservation organizations</li>
+    <li>EcoField AI for species identification and habitat identification</li>
+  </ul>
+</section>
+    </div>
+
+    <section class="testimonials">
+    <h1>What Students and Researchers Say</h1>
+
+    <div class="testimonial-grid">
+
+        <div class="testimonial-card">
+            <p class="quote">
+                "EcoField made our field ecology practical so much easier.
+                Students could log data offline and it synced automatically
+                when we got back to campus."
+            </p>
+            <div class="author">
+                <div class="avatar" style="background:#2e7d32;">US</div>
+                <div>
+                    <strong>User</strong>
+                    <span>Lecturer, University of Ghana (DABCS)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="testimonial-card">
+            <p class="quote">
+                "We use EcoField for our wetland monitoring project.
+                The offline capability is a game-changer for when we're in areas
+                with zero signal most of the time."
+            </p>
+            <div class="author">
+                <div class="avatar" style="background:#1b5e20;">US</div>
+                <div>
+                    <strong>User</strong>
+                    <span>Research Assistant, DABCS</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="testimonial-card">
+            <p class="quote">
+                "As a student, I needed a simple way to collect
+                field data at Shai Hills. EcoField was intuitive and the
+                dashboard made analysis straightforward."
+            </p>
+            <div class="author">
+                <div class="avatar" style="background:#388e3c;">US</div>
+                <div>
+                    <strong>User</strong>
+                    <span>Student, DABCS</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </section>
+
+    <div class="overlay" id="overlay"></div>
+
+    <div class="login-box" id="login-box">
+      <span class="close-btn" id="close-btn">&times;</span>
+      <h2>Access <strong style='color: #2e7d32;'>EcoField Logger</strong></h2>
+      <p>EcoField Logger is the field data collection workspace within the EcoField platform.</p>
+      <p>Please identify your role to continue</p>
+      <form method="POST" id="login-form">
+        <input
+          type="text"
+          name="username"
+          placeholder="Enter 'student' or 'admin'"
+          required
+          style="width: 90%; padding: 10px"
+        />
+        {% if error %}
+        <p style="color: red">{{ error }}</p>
+        {% endif %}
+        <button type="submit" class="login-btn">Enter Platform</button>
+      </form>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-col">
+          <h3>EcoField</h3>
+          <p>
+           Proudly developed at the University of Ghana (Department of Animal Biology and Conservation Science) and built to serve
+  researchers, institutions, and conservation organizations everywhere.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/research">Research</a></li>
+            <li><a href="/explore">Explore</a></li>
+            <li><a href="/projects">Projects</a></li>
+            <li><a href="/models">Models</a></li>
+            <li><a href="/about">About</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <ul>
+            <li><a href="mailto:hello.miltonpixel@gmail.com">Email</a></li>
+            <li><a href="#" onclick='showAlert()'>Support Center</a></li>
+            <li><a href="#" onclick='showAlert()'>Documentation</a></li>
+            <li><a href="#" onclick='showAlert()'>GitHub</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 EcoField by <a href="/about#developer" style="color: #666;">MiltonPixel</a>. All rights reserved.</p>
+      </div>
+    </footer>
+  </body>
 </html>
 
+    <script>
+      function showAlert() {
+        alert('This page is not ready');
+        event.preventDefault()
+      }
+
+      var indicator = document.getElementById("status-indicator");
+
+      function updateStatus() {
+        if (navigator.onLine) {
+          indicator.className = "status-indicator online";
+          indicator.innerHTML = '<span class="status-dot"></span> Online';
+        } else {
+          indicator.className = "status-indicator offline";
+          indicator.innerHTML = '<span class="status-dot"></span> Offline';
+        }
+      }
+
+      window.addEventListener("online", updateStatus);
+      window.addEventListener("offline", updateStatus);
+      updateStatus();
+
+      var startBtn = document.getElementById("start-logging-btn");
+      var loginBox = document.getElementById("login-box");
+      var overlay = document.getElementById("overlay");
+      var closeBtn = document.getElementById("close-btn");
+
+      function showLogin() {
+        loginBox.style.display = "block";
+        overlay.style.display = "block";
+      }
+
+      function hideLogin() {
+        loginBox.style.display = "none";
+        overlay.style.display = "none";
+      }
+
+      startBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        showLogin();
+      });
+
+      closeBtn.addEventListener("click", hideLogin);
+      overlay.addEventListener("click", hideLogin);
+
+        document
+        .getElementById("login-form")
+        .addEventListener("submit", function (e) {
+          if (!navigator.onLine) {
+            e.preventDefault();
+            var role = this.querySelector('input[name="username"]')
+              .value.trim()
+              .toLowerCase();
+            if (role === "student" || role === "admin") {
+              localStorage.setItem("ecofield_role", role);
+              window.location.href = "/home";
+            }
+          }
+        });
+    </script>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var toggle = document.getElementById('mobileNavToggle');
+        var close = document.getElementById('mobileSidebarClose');
+        var sidebar = document.getElementById('mobileSidebar');
+        var overlay = document.getElementById('mobileSidebarOverlay');
+
+        function openSidebar() {
+          sidebar.classList.add('open');
+          overlay.classList.add('open');
+          toggle.classList.add('open');
+        }
+
+        function closeSidebar() {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('open');
+          toggle.classList.remove('open');
+        }
+
+        if (toggle) toggle.addEventListener('click', openSidebar);
+        if (close) close.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
+      });
+    </script>

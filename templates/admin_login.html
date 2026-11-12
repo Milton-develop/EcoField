@@ -10,9 +10,10 @@
 </head>
 <body>
 
- <nav class="navbar">
+  <div class='head'>
+    <nav class="navbar">
     <div class="nav-container">
-      <a href="/" class="nav-brand">EcoField Logger</a>
+      <a href="/" class="nav-brand">EcoField</a>
       <h5>University of Ghana &bull; School of Biological Sciences</h5>
       <div class="nav-links">
         <a href="/admin/view_archive" class="active">Admin</a>
@@ -21,17 +22,24 @@
       </div>
     </div>
   </nav>
-
-  <div class="admin">
+    <div class="admin">
     <div class="header">
     <h1 class="text">Admin Login</h1>
-    <p>Enter your password to access the admin panel of <strong>EcoField Logger</strong></p>
+    <p>Enter your password to access your admin panel of <strong>EcoField</strong></p>
+    <p style='color: red; font-weight: bold;'>Authorized Access Only</p>
     {% if error %}
       <p style="color:red;">{{ error }}</p>
     {% endif %}
   </div>
   <main>
     <form action="/admin/login" method="POST" class="admin-container">
+      <div class='logo'>
+        <img src='/static/images/crest.png'>
+      </div>
+      <div class="nav-brand-text">
+            <span class="nav-uni-name">University of Ghana</span>
+            <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+          </div>
       <label for="admin_password">Admin Password</label>
       <div class="password-container">
         <input type="password" name="admin_password" id="admin_password" placeholder="Enter Admin Password" required>
@@ -45,6 +53,7 @@
       <button type="submit" class="btn1" style="width: 100%; background-color: rgb(31, 194, 31)">Login</button>
     </form>
   </main>
+  </div>
   </div>
 
   <script>

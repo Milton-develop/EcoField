@@ -8,7 +8,7 @@
 
 <aside class="admin-sidebar" id="adminSidebar">
   <div class="sidebar-brand">
-    <a href="/admin/logout" class="sidebar-brand-link">EcoField Logger</a>
+    <a href="/admin/logout" class="sidebar-brand-link">EcoField</a>
     <span class="sidebar-badge">ADMIN PORTAL</span>
     <button class="sidebar-close" id="sidebarClose" aria-label="Close navigation">
       <span class="close-line"></span>
@@ -22,7 +22,11 @@
     <a href="/add_species" class="sidebar-link{% if active_sidebar == 'species' %} active{% endif %}">Unlisted</a>
     <a href="/admin/settings" class="sidebar-link{% if active_sidebar == 'settings' %} active{% endif %}">Settings</a>
     <a href="/admin/archive" class="sidebar-link{% if active_sidebar == 'archive' %} active{% endif %}">Archive</a>
-    <a href="/admin/reports" class="sidebar-link{% if active_sidebar == 'reports' %} active{% endif %}">Reports</a>
+    <a href="/admin/reports" class="sidebar-link{% if active_sidebar == 'reports' %} active{% endif %}">Student Reports</a>
+    <a href="/admin/research_reports" class="sidebar-link{% if active_sidebar == 'research_reports' %} active{% endif %}">Research Reports</a>
+    <a href="/admin/research" class="sidebar-link{% if active_sidebar == 'research' %} active{% endif %}">Research</a>
+    <a href="/admin/projects" class="sidebar-link{% if active_sidebar == 'projects' %} active{% endif %}">Projects</a>
+    <a href="/admin/sent_notifications" class="sidebar-link{% if active_sidebar == 'sent_notifications' %} active{% endif %}">Sent Notifications</a>
     <a href="#" class="sidebar-link sidebar-darkmode" id="darkModeToggle">
       <span id="darkModeIcon"></span> <span id="darkModeLabel">Dark Mode</span>
     </a>

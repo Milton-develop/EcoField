@@ -1,0 +1,247 @@
+.models-hero {
+    background: linear-gradient(90deg, rgba(4, 20, 12, 0.95) 0%, rgba(4, 12, 18, 0.6) 60%, rgba(0, 0, 0, 0.2) 100%), url('/static/images/student.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+.models-hero-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 20px 60px;
+    color: #fff;
+}
+
+.models-hero-content h1 {
+    font-size: 2.2rem;
+    margin: 0 0 12px;
+}
+
+.models-hero-content p {
+    font-size: 1.05rem;
+    color: #ddd;
+    max-width: 600px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.models-intro {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 20px 20px;
+    text-align: center;
+}
+
+.models-intro h2 {
+    color: #2e7d32;
+    font-size: 1.7rem;
+    margin: 0 0 16px;
+}
+
+.models-intro p {
+    color: #555;
+    line-height: 1.7;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.models-grid-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 20px 60px;
+}
+
+.models-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+}
+
+.model-card {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 14px;
+    padding: 28px 26px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.model-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.model-card.coming-soon {
+    background: #f7faf7;
+    border-style: dashed;
+}
+
+.model-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.model-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.model-status {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+}
+
+.model-status.available {
+    background: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #a5d6a7;
+}
+
+.model-status.soon {
+    background: #fff3e0;
+    color: #e65100;
+    border: 1px solid #ffcc80;
+}
+
+.model-card h2 {
+    color: #1a3a1c;
+    font-size: 1.25rem;
+    margin: 0 0 12px;
+}
+
+.model-card p {
+    color: #555;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    margin: 0 0 16px;
+}
+
+.model-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px;
+}
+
+.model-features li {
+    color: #555;
+    font-size: 0.88rem;
+    padding: 5px 0 5px 18px;
+    position: relative;
+}
+
+.model-features li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 13px;
+    width: 7px;
+    height: 7px;
+    background: #37b23e;
+    border-radius: 50%;
+}
+
+.model-btn {
+    display: inline-block;
+    margin-top: auto;
+    align-self: flex-start;
+    background: #2e7d32;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 600;
+    padding: 0.75rem 1.3rem;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+button.model-btn {
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.model-btn:hover {
+    background: #37b23e;
+}
+
+.model-btn.disabled {
+    background: #cfcfcf;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.ai-tool-panel {
+    max-width: 900px;
+    margin: 0 auto 60px;
+    padding: 28px;
+    background: #f0f7f0;
+    border-top: 4px solid #2e7d32;
+    border-radius: 14px;
+    box-sizing: border-box;
+    scroll-margin-top: 20px;
+}
+
+.ai-tool-panel[hidden] {
+    display: none;
+}
+
+.ai-tool-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.ai-tool-header h2 {
+    color: #2e7d32;
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.ai-tool-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    color: #555;
+    cursor: pointer;
+    padding: 0 0.3rem;
+}
+
+.ai-tool-close:hover {
+    color: #c62828;
+}
+
+.ai-tool-panel .ai-card {
+    box-shadow: none;
+}
+
+.ai-tool-panel .ai-warning {
+    margin-bottom: 20px;
+}
+
+@media (max-width: 800px) {
+    .models-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .models-hero-content h1 {
+        font-size: 1.6rem;
+    }
+    .model-btn {
+        align-self: stretch;
+        text-align: center;
+    }
+    .ai-tool-panel {
+        padding: 18px;
+    }
+}

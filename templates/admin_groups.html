@@ -197,6 +197,87 @@
     .download-all-btn:hover {
       background: #e8f5e9;
     }
+    .edit-members-btn {
+      background: #1565c0;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .edit-members-btn:hover {
+      background: #0d47a1;
+    }
+    .remove-student-btn {
+      background: #e53935;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .remove-student-btn:hover {
+      background: #c62828;
+    }
+    .remove-col {
+      display: none;
+    }
+    .group-card.editing .remove-col {
+      display: table-cell;
+    }
+    .add-student-form {
+      display: none;
+      padding: 0.75rem 1.5rem 1rem;
+      border-top: 1px solid #e0e0e0;
+      background: #fafafa;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .group-card.editing .add-student-form {
+      display: flex;
+    }
+    .add-student-form input {
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    .add-student-form .add-sid-input {
+      width: 130px;
+    }
+    .add-student-form .add-sname-input {
+      width: 180px;
+    }
+    .add-student-form .add-student-submit {
+      background: #2e7d32;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .add-student-form .add-student-submit:hover {
+      background: #1b5e20;
+    }
+    .add-student-form .add-status {
+      font-size: 0.8rem;
+    }
+    .add-student-form .add-status.saved {
+      color: #2e7d32;
+    }
+    .add-student-form .add-status.error {
+      color: #e53935;
+    }
+    .group-card-header .header-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
 
     @media (max-width: 768px) {
       .search-bar {
@@ -224,8 +305,12 @@
       }
 
       .group-card-header form,
-      .group-card-header .delete-btn {
+      .group-card-header .delete-btn,
+      .group-card-header .edit-members-btn {
         width: 100%;
+      }
+      .group-card-header .header-actions {
+        grid-column: 1 / -1;
       }
 
       .group-students {
@@ -269,20 +354,23 @@
           <div class="group-card">
             <div class="group-card-header">
               <span class="group-id">{{ group.group_id }}</span>
-              <span class="pw-static" id="pw-static-{{ loop.index }}">
-                <span class="group-pw">Password: {{ group.password }}</span>
-                <button type="button" class="edit-pw-btn" onclick="editPassword({{ loop.index }}, '{{ group.group_id }}')">Edit</button>
-              </span>
-              <span class="pw-edit-inline" id="pw-edit-{{ loop.index }}">
-                <input type="text" class="pw-input" value="{{ group.password }}" data-original="{{ group.password }}">
-                <input type="password" class="admin-pw-input" placeholder="Admin PW">
-                <button type="button" class="pw-save-inline" onclick="savePassword({{ loop.index }}, '{{ group.group_id }}')">Save</button>
-                <button type="button" class="pw-cancel-inline" onclick="cancelEdit({{ loop.index }})">Cancel</button>
-                <span class="pw-status-inline" id="pw-status-{{ loop.index }}"></span>
-              </span>
-              <form action="{{ url_for('delete_group', group_id=group.group_id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this group and all its students?');" style="margin: 0;">
-                <button type="submit" class="delete-btn">Delete</button>
-              </form>
+              <div class="header-actions">
+                <span class="pw-static" id="pw-static-{{ loop.index }}">
+                  <span class="group-pw">Password: {{ group.password }}</span>
+                  <button type="button" class="edit-pw-btn" onclick="editPassword({{ loop.index }}, '{{ group.group_id }}')">Edit</button>
+                </span>
+                <span class="pw-edit-inline" id="pw-edit-{{ loop.index }}">
+                  <input type="text" class="pw-input" value="{{ group.password }}" data-original="{{ group.password }}">
+                  <input type="password" class="admin-pw-input" placeholder="Admin PW">
+                  <button type="button" class="pw-save-inline" onclick="savePassword({{ loop.index }}, '{{ group.group_id }}')">Save</button>
+                  <button type="button" class="pw-cancel-inline" onclick="cancelEdit({{ loop.index }})">Cancel</button>
+                  <span class="pw-status-inline" id="pw-status-{{ loop.index }}"></span>
+                </span>
+                <button type="button" class="edit-members-btn" onclick="toggleEditMembers(this)">Edit Members</button>
+                <form action="{{ url_for('delete_group', group_id=group.group_id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this group and all its students?');" style="margin: 0;">
+                  <button type="submit" class="delete-btn">Delete</button>
+                </form>
+              </div>
             </div>
             <div class="group-students">
               <h4>Students ({{ group.students|length }})</h4>
@@ -292,13 +380,17 @@
                   <tr>
                     <th>Student ID</th>
                     <th>Student Name</th>
+                    <th class="remove-col"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {% for s in group.students %}
-                  <tr>
+                  <tr data-row-id="{{ s.id }}">
                     <td>{{ s.student_id }}</td>
                     <td>{{ s.student_name }}</td>
+                    <td class="remove-col">
+                      <button type="button" class="remove-student-btn" onclick="removeStudent(this, {{ s.id }}, '{{ group.group_id }}')">Remove</button>
+                    </td>
                   </tr>
                   {% endfor %}
                 </tbody>
@@ -306,6 +398,12 @@
               {% else %}
               <div class="no-students">No students registered.</div>
               {% endif %}
+            </div>
+            <div class="add-student-form" data-group-id="{{ group.group_id }}">
+              <input type="text" class="add-sid-input" placeholder="Student ID">
+              <input type="text" class="add-sname-input" placeholder="Student Name">
+              <button type="button" class="add-student-submit" onclick="addStudent(this)">Add</button>
+              <span class="add-status"></span>
             </div>
           </div>
           {% endfor %}
@@ -405,6 +503,125 @@ function savePassword(index, groupId) {
     .finally(function() {
       btn.disabled = false;
       btn.textContent = 'Save';
+    });
+}
+
+function toggleEditMembers(btn) {
+  var card = btn.closest('.group-card');
+  card.classList.toggle('editing');
+  btn.textContent = card.classList.contains('editing') ? 'Done' : 'Edit Members';
+}
+
+function removeStudent(btn, rowId, groupId) {
+  if (!confirm('Remove this student from ' + groupId + '?')) return;
+  btn.disabled = true;
+  btn.textContent = '...';
+  fetch('/admin/remove_student', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: rowId })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        var row = btn.closest('tr');
+        var tbody = row.parentNode;
+        row.remove();
+        var countEl = btn.closest('.group-card').querySelector('.group-students h4');
+        if (countEl) {
+          var m = countEl.textContent.match(/\d+/);
+          if (m) countEl.textContent = 'Students (' + (parseInt(m[0]) - 1) + ')';
+        }
+        if (tbody.children.length === 0) {
+          var table = tbody.closest('table');
+          table.remove();
+          var noDiv = document.createElement('div');
+          noDiv.className = 'no-students';
+          noDiv.textContent = 'No students registered.';
+          btn.closest('.group-card').querySelector('.group-students').appendChild(noDiv);
+        }
+      } else {
+        alert(data.error || 'Failed to remove student');
+        btn.disabled = false;
+        btn.textContent = 'Remove';
+      }
+    })
+    .catch(function() {
+      alert('Network error');
+      btn.disabled = false;
+      btn.textContent = 'Remove';
+    });
+}
+
+function addStudent(btn) {
+  var form = btn.closest('.add-student-form');
+  var groupId = form.getAttribute('data-group-id');
+  var sidInput = form.querySelector('.add-sid-input');
+  var snameInput = form.querySelector('.add-sname-input');
+  var status = form.querySelector('.add-status');
+  var sid = sidInput.value.trim();
+  var sname = snameInput.value.trim();
+
+  if (!sid || !sname) {
+    status.className = 'add-status error';
+    status.textContent = 'Enter both ID and name';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
+  status.className = 'add-status';
+  status.textContent = '';
+
+  fetch('/admin/add_student', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ group_id: groupId, student_id: sid, student_name: sname })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        status.className = 'add-status saved';
+        status.textContent = 'Added!';
+        sidInput.value = '';
+        snameInput.value = '';
+        var card = btn.closest('.group-card');
+        var studentsDiv = card.querySelector('.group-students');
+        var noStudents = studentsDiv.querySelector('.no-students');
+        if (noStudents) noStudents.remove();
+
+        var table = studentsDiv.querySelector('table');
+        if (!table) {
+          table = document.createElement('table');
+          table.innerHTML = '<thead><tr><th>Student ID</th><th>Student Name</th><th class="remove-col"></th></tr></thead><tbody></tbody>';
+          studentsDiv.appendChild(table);
+        }
+        var tbody = table.querySelector('tbody');
+        var row = document.createElement('tr');
+        row.innerHTML = '<td>' + sid + '</td><td>' + sname + '</td><td class="remove-col"><button type="button" class="remove-student-btn" onclick="removeStudent(this, null, \'' + groupId + '\')">Remove</button></td>';
+        tbody.appendChild(row);
+
+        var countEl = studentsDiv.querySelector('h4');
+        if (countEl) {
+          var m = countEl.textContent.match(/\d+/);
+          if (m) countEl.textContent = 'Students (' + (parseInt(m[0]) + 1) + ')';
+        }
+        setTimeout(function() {
+          status.className = 'add-status';
+          status.textContent = '';
+        }, 1500);
+      } else {
+        status.className = 'add-status error';
+        status.textContent = data.error || 'Error';
+      }
+    })
+    .catch(function() {
+      status.className = 'add-status error';
+      status.textContent = 'Network error';
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.textContent = 'Add';
     });
 }
 

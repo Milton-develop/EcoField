@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EcoField | About</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}?v={{ cache_bust }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/about.css') }}?v={{ cache_bust }}" />
+    <link rel="icon" href="/static/images/icon-192x192.png" />
+</head>
+<body>
+
+    <div class="about-hero">
+        <nav>
+            <div class="nav-bar">
+                <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Open navigation">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                 <div class="nav-brand">
+            <img src="/static/images/crest.png" alt="University of Ghana" class="nav-crest">
+            <div class="nav-brand-text">
+              <span class="nav-uni-name">University of Ghana</span>
+              <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+            </div>
+          </div>
+                <div class="nav-links desktop-nav">
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/research">Research</a></li>
+                        <li><a href="/explore">Explore</a></li>
+                        <li><a href="/projects">Projects</a></li>
+                        <li><a href="/models">Models</a></li>
+                        <li><a href="/about" class="active">About</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="mobile-sidebar-overlay" id="mobileSidebarOverlay"></div>
+        <div class="mobile-sidebar" id="mobileSidebar">
+            <div class="mobile-sidebar-brand">
+          <img src="/static/images/crest.png" alt="University of Ghana" class="nav-crest">
+          <div class="nav-brand-text">
+            <span class="nav-uni-name">University of Ghana</span>
+            <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+          </div>
+          <button class="mobile-sidebar-close" id="mobileSidebarClose" aria-label="Close navigation">
+            <span class="close-line"></span>
+            <span class="close-line"></span>
+          </button>
+        </div>
+            <nav class="mobile-sidebar-nav">
+                <a href="/" class="mobile-sidebar-link">Home</a>
+                <a href="/research" class="mobile-sidebar-link">Research</a>
+                <a href="/explore" class="mobile-sidebar-link">Explore</a>
+                <a href="/projects" class="mobile-sidebar-link">Projects</a>
+                <a href="/models" class="mobile-sidebar-link">Models</a>
+                <a href="/about" class="mobile-sidebar-link active">About</a>
+            </nav>
+        </div>
+        <div class="about-hero-content">
+            <h1>About <span style="color: #37b23e">EcoField</span></h1>
+            <p>An ecological intelligence platform for offline-first field data collection, 
+                biodiversity management, and research collaboration.</p>
+        </div>
+    </div>
+
+    <section class="about-mission">
+        <div class="mission-text">
+            <h2>Our Mission</h2>
+            <p><strong style="color: #37b23e">EcoField</strong> exists to advance biodiversity research and environmental
+        stewardship by providing a unified digital ecosystem for ecological
+        data collection, collaboration, analysis, and knowledge sharing. Our
+        mission is to empower researchers, educational institutions,
+        conservation organizations, and government agencies with tools that
+        simplify fieldwork, improve data quality, and transform ecological
+        observations into meaningful scientific insights.</p>
+            <p> At the heart of the platform is <strong>EcoField Logger</strong>, an
+        offline-first field data collection application that enables reliable
+        ecological surveys in remote and low-connectivity environments. Working
+        seamlessly with the broader EcoField ecosystem, it ensures that field
+        observations become part of a connected, searchable, and scalable
+        biodiversity knowledge base.</p>
+        <p>
+            EcoField is an independent software platform developed 
+            by Moses Milton. While initially developed in collaboration 
+            with the University of Ghana's Department of Animal Biology and 
+            Conservation Science, the platform is intended to evolve as a multi-institution 
+            ecological intelligence platform supporting research, conservation, and 
+            biodiversity management across academia and industry.
+        </p>
+        </div>
+        <div class="mission-stats">
+            <div class="stat">
+                <h3>100+</h3>
+                <p>Student Groups Supported</p>
+            </div>
+            <div class="stat">
+                <h3>1000+</h3>
+                <p>Field Records Collected</p>
+            </div>
+            <div class="stat">
+                <h3>90%</h3>
+                <p>Offline Storage Reliability</p>
+            </div>
+            <div class="stat">
+                <h3>95%</h3>
+                <p>Data Sync Success Rate</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-features">
+        <h2>Platform Features</h2>
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon">&#128230;</div>
+                <h3>Offline-First</h3>
+                <p>Collect and store data fully offline. Auto-syncs to the cloud when connectivity is restored.</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">&#128202;</div>
+                <h3>Biodiversity Analytics</h3>
+                <p>Interactive dashboards with biodiversity metrics including Simpson, Shannon, and Evenness indices.</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">&#128248;</div>
+                <h3>Photo Capture &amp; Upload</h3>
+                <p>Take photos directly in the field or upload from your device gallery to accompany observations.</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">&#127758;</div>
+                <h3>Species Explorer</h3>
+                <p>Browse a structured species database by location and survey type with scientific names and metadata.</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">&#128101;</div>
+                <h3>Group Management</h3>
+                <p>Organize students into groups with secure logins. Admins can upload rosters and manage access.</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">&#128200;</div>
+                <h3>Research Repository</h3>
+                <p>Publish and share research work with document uploads for the broader scientific community.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-tech">
+        <h2>Technology Stack</h2>
+        <div class="tech-grid">
+            <div class="tech-item">
+                <h3>Frontend</h3>
+                <ul>
+                    <li>HTML5 &amp; CSS3</li>
+                    <li>JavaScript (Vanilla)</li>
+                    <li>Progressive Web App</li>
+                    <li>Service Workers</li>
+                    <li>IndexedDB</li>
+                </ul>
+            </div>
+            <div class="tech-item">
+                <h3>Backend</h3>
+                <ul>
+                    <li>Python Flask</li>
+                    <li>Supabase (PostgreSQL)</li>
+                    <li>RESTful APIs</li>
+                    <li>Gunicorn</li>
+                </ul>
+            </div>
+            <div class="tech-item">
+                <h3>Data &amp; Analytics</h3>
+                <ul>
+                    <li>Pandas &amp; NumPy</li>
+                    <li>Biodiversity Indices</li>
+                    <li>Leaflet Maps</li>
+                    <li>Chart.js</li>
+                    <li>Plotly</li>
+                </ul>
+            </div>
+            <div class="tech-item">
+                <h3>Security</h3>
+                <ul>
+                    <li>Bcrypt Password Hashing</li>
+                    <li>Fernet Encryption</li>
+                    <li>Session-Based Auth</li>
+                    <li>Row Level Security</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="about-developer"  id='developer'>
+        <h2>Meet the Developer</h2>
+        <div class="developer-card">
+            <img src="{{ url_for('static', filename='images/Profile.jpg') }}" alt="MiltonPixel" class="dev-img" />
+            <div class="dev-info">
+                <h3>Moses Milton Todoe</h3>
+                <p class="dev-role">Biological Sciences &bull; Software Developer &bull; Designer</p>
+                <p>Hi, I'm the developer behind <span style="color: #2e7d32">EcoField</span> a student passionate about building digital 
+                    tools that connect science, technology, and create real world impact. My work is driven 
+                    by a fascination with how thoughtful design and intelligent systems can simplify complex 
+                    problems in research, conservation, and education.</p>
+                <p>With a background in Animal Biology with Conservation Science and Biochemistry, I approach 
+                    development with both scientific curiosity and creative thinking. My long-term vision is 
+                    to bridge science, code, and design to create tools that genuinely improve how people learn, 
+                    research, and solve problems.</p>
+                <div class="dev-links">
+                    <a href="https://github.com/Milton-develop" target="_blank">GitHub</a>
+                    <a href="https://www.linkedin.com/in/pixelsynth" target="_blank">LinkedIn</a>
+                    <a href="mailto:hello.miltonpixel@gmail.com">Email</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <h3>EcoField</h3>
+                <p>Proudly developed at the University of Ghana (Department of 
+                    Animal Biology and Conservation Science) and built to serve 
+                    researchers, institutions, and conservation organizations 
+                    everywhere.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/research">Research</a></li>
+                    <li><a href="/explore">Explore</a></li>
+                    <li><a href="/projects">Projects</a></li>
+                    <li><a href="/models">Models</a></li>
+                    <li><a href="/about">About</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <ul>
+                    <li><a href="mailto:hello.miltonpixel@gmail.com">Email</a></li>
+                    <li><a href="#">Support Center</a></li>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 EcoField Logger by <a href="/about#developer" style="color: #666;">MiltonPixel</a>. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var toggle = document.getElementById('mobileNavToggle');
+        var close = document.getElementById('mobileSidebarClose');
+        var sidebar = document.getElementById('mobileSidebar');
+        var overlay = document.getElementById('mobileSidebarOverlay');
+
+        function openSidebar() {
+          sidebar.classList.add('open');
+          overlay.classList.add('open');
+          toggle.classList.add('open');
+        }
+
+        function closeSidebar() {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('open');
+          toggle.classList.remove('open');
+        }
+
+        if (toggle) toggle.addEventListener('click', openSidebar);
+        if (close) close.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
+      });
+    </script>
+
+</body>
+</html>

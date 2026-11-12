@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EcoField | Projects</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}?v={{ cache_bust }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/projects.css') }}?v={{ cache_bust }}" />
+    <link rel="icon" href="/static/images/icon-192x192.png" />
+</head>
+<body>
+
+    <div class="projects-hero">
+        <nav>
+            <div class="nav-bar">
+                <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Open navigation">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                 <div class="nav-brand">
+            <img src="/static/images/crest.png" alt="University of Ghana" class="nav-crest">
+            <div class="nav-brand-text">
+              <span class="nav-uni-name">University of Ghana</span>
+              <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+            </div>
+          </div>
+                <div class="nav-links desktop-nav">
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/research">Research</a></li>
+                        <li><a href="/explore">Explore</a></li>
+                        <li><a href="/projects" class="active">Projects</a></li>
+                        <li><a href="/models">Models</a></li>
+                        <li><a href="/about">About</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="mobile-sidebar-overlay" id="mobileSidebarOverlay"></div>
+        <div class="mobile-sidebar" id="mobileSidebar">
+            <div class="mobile-sidebar-brand">
+          <img src="/static/images/crest.png" alt="University of Ghana" class="nav-crest">
+          <div class="nav-brand-text">
+            <span class="nav-uni-name">University of Ghana</span>
+            <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+          </div>
+          <button class="mobile-sidebar-close" id="mobileSidebarClose" aria-label="Close navigation">
+            <span class="close-line"></span>
+            <span class="close-line"></span>
+          </button>
+        </div>
+            <nav class="mobile-sidebar-nav">
+                <a href="/" class="mobile-sidebar-link">Home</a>
+                <a href="/research" class="mobile-sidebar-link">Research</a>
+                <a href="/explore" class="mobile-sidebar-link">Explore</a>
+                <a href="/projects" class="mobile-sidebar-link active">Projects</a>
+                <a href="/models" class="mobile-sidebar-link">Models</a>
+                <a href="/about" class="mobile-sidebar-link">About</a>
+            </nav>
+        </div>
+        <div class="projects-hero-content">
+            <h1>EcoField <span style="color: #37b23e">Projects</span></h1>
+            <p>Track our field campaigns, platform milestones, and the journey toward a full ecological intelligence system.</p>
+        </div>
+    </div>
+
+    <!-- UPCOMING PROJECTS -->
+    <section class="upcoming-section">
+        <div class="upcoming-inner">
+            <h2>Upcoming Projects</h2>
+            <p class="section-subtitle">Active field campaigns and deployment milestones for EcoField</p>
+
+            <div class="project-cards">
+
+                {% if projects %}
+                    {% for p in projects %}
+                    <div class="project-card{% if p.get('is_featured') %} featured{% endif %}">
+                        {% if p.get('is_featured') %}
+                        <div class="card-badge">Featured</div>
+                        {% endif %}
+                        <div class="card-header">
+                            <div class="card-icon"></div>
+                            <div class="card-meta">
+                                <span class="card-date">{{ p.get('date_range', '') }}</span>
+                                <span class="card-status status-{{ p.get('status', 'upcoming') }}">{{ p.get('status', 'upcoming').replace('_', ' ').title() }}</span>
+                            </div>
+                        </div>
+                        <h3>{{ p.get('title', '') }}</h3>
+                        {% if p.get('organization') %}
+                        <p class="card-org">{{ p.get('organization') }}</p>
+                        {% endif %}
+                        {% if p.get('description') %}
+                        <p class="card-desc">{{ p.get('description') }}</p>
+                        {% endif %}
+                        {% if p.get('location') %}
+                        <div class="card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Location</span>
+                                <span class="detail-value">{{ p.get('location') }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if p.get('tags') %}
+                        <div class="card-tags">
+                            {% for tag in p.get('tags', '').split(',') %}
+                                {% if tag.strip() %}
+                                <span class="tag">{{ tag.strip() }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align:center; padding:3rem; color:#999; grid-column: 1 / -1;">
+                        <p style="font-size:1.2rem;">No projects yet.</p>
+                        <p>Check back soon for upcoming field campaigns and platform milestones.</p>
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </section>
+
+    <!-- PLATFORM ROADMAP -->
+    <section class="roadmap-section">
+        <div class="roadmap-inner">
+            <h2>Platform Roadmap</h2>
+            <p class="section-subtitle">The evolution of EcoField from a field data logger into a full ecological intelligence platform</p>
+
+            <div class="roadmap-timeline">
+
+                <!-- Phase 1: Foundation -->
+                <div class="timeline-phase completed">
+                    <div class="phase-marker">
+                        <div class="phase-dot"></div>
+                        <div class="phase-line"></div>
+                    </div>
+                    <div class="phase-content">
+                        <span class="phase-label">Phase 1 &mdash; Foundation</span>
+                        <h3>Core Field Logger</h3>
+                        <p>The initial platform built to solve a real problem: reliable ecological data collection in the field, even offline.</p>
+                        <ul class="milestone-list">
+                            <li class="done">Offline-first data collection with IndexedDB</li>
+                            <li class="done">Auto-sync to cloud when connectivity returns</li>
+                            <li class="done">Group-based access for student field teams</li>
+                            <li class="done">Photo capture and GPS-tagged observations</li>
+                            <li class="done">Biodiversity indices (Simpson, Shannon, Evenness)</li>
+                            <li class="done">Research document repository</li>
+                            <li class="done">Species explorer with Wikipedia integration</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Phase 2: Intelligence -->
+                <div class="timeline-phase current">
+                    <div class="phase-marker">
+                        <div class="phase-dot"></div>
+                        <div class="phase-line"></div>
+                    </div>
+                    <div class="phase-content">
+                        <span class="phase-label">Phase 2 &mdash; Intelligence Layer</span>
+                        <h3>From Logger to Intelligence Platform</h3>
+                        <p>Adding analytical depth that transforms raw field data into ecological insights.</p>
+                        <ul class="milestone-list">
+                            <li class="done">EcoBot AI assistant for species queries</li>
+                            <li class="done">Interactive biodiversity analytics dashboard</li>
+                            <li class="done">Species distribution heatmaps</li>
+                            <li class="in-progress">Temporal trend analysis across survey seasons <span style='color: red;'>ON HOLD</span></li>
+                            <li class="done">Automated species identification from photos</li>
+                            <li class="done">AI-powered habitat classification</li>
+                            <li class="done">Exportable research-grade reports</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Phase 3: Ecosystem -->
+                <div class="timeline-phase upcoming">
+                    <div class="phase-marker">
+                        <div class="phase-dot"></div>
+                        <div class="phase-line"></div>
+                    </div>
+                    <div class="phase-content">
+                        <span class="phase-label">Phase 3 &mdash; Ecosystem</span>
+                        <h3>Multi-Stakeholder Platform</h3>
+                        <p>Scaling EcoField to serve the broader ecological research and conservation community.</p>
+                        <ul class="milestone-list">
+                            <li class="in-progress">Multi-institution admin and group management</li>
+                            <li class="in-progress">NGO conservation project dashboards</li>
+                            <li class="in-progress">Government agency data integration (Wildlife Division, EPA)</li>
+                            <li class="in-progress">Open biodiversity data API for researchers</li>
+                            <li class="in-progress">School and university curriculum integration kits</li>
+                            <li class="in-progress">Collaborative fieldwork scheduling and coordination</li>
+                            <li class="in-progress">Real-time multi-team expedition tracking</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Phase 4: Scale -->
+                <div class="timeline-phase upcoming">
+                    <div class="phase-marker">
+                        <div class="phase-dot"></div>
+                    </div>
+                    <div class="phase-content">
+                        <span class="phase-label">Phase 4 &mdash; Scale</span>
+                        <h3>Ecological Intelligence Network</h3>
+                        <p>The long-term vision: a connected network of ecological data contributing to global conservation decisions.</p>
+                        <ul class="milestone-list">
+                            <li>Cross-border biodiversity monitoring network</li>
+                            <li>Integration with global biodiversity databases (GBIF, iNaturalist)</li>
+                            <li>Predictive ecological modeling tools</li>
+                            <li>Conservation impact scoring and reporting</li>
+                            <li>Community-powered species verification system</li>
+                            <li>Mobile companion app for citizen scientists</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- CALL TO ACTION -->
+    <section class="cta-section">
+        <div class="cta-inner">
+            <h2>Built for Everyone in Ecology</h2>
+            <p>Whether you're a university researcher, an NGO running conservation programs, 
+                a school teaching environmental science, or a government agency managing 
+                wildlife data EcoField is being built to serve your workflow.</p>
+            <div class="cta-audiences">
+                <div class="audience-card">
+                    <div class="audience-icon">&#127891;</div>
+                    <h3>Schools &amp; Universities</h3>
+                    <p>Equip students with a professional field data tool. Manage groups, 
+                        track submissions, and teach ecological surveying the modern way.</p>
+                </div>
+                <div class="audience-card">
+                    <div class="audience-icon">&#127757;</div>
+                    <h3>NGOs &amp; Conservation Groups</h3>
+                    <p>Run field campaigns with reliable offline data collection, team 
+                        coordination, and exportable research-grade reports.</p>
+                </div>
+                <div class="audience-card">
+                    <div class="audience-icon">&#127963;</div>
+                    <h3>Government Agencies</h3>
+                    <p>Integrate biodiversity monitoring data into national conservation 
+                        planning with structured, searchable, and verifiable datasets.</p>
+                </div>
+            </div>
+            <div class="cta-actions">
+                <a href="mailto:hello.miltonpixel@gmail.com" class="cta-btn primary">Get in Touch</a>
+                <a href="/about" class="cta-btn secondary">Learn More About EcoField</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <h3>EcoField</h3>
+                <p>Proudly developed at the University of Ghana (Department of 
+                    Animal Biology and Conservation Science) and built to serve 
+                    researchers, institutions, and conservation organizations 
+                    everywhere.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/research">Research</a></li>
+                    <li><a href="/explore">Explore</a></li>
+                    <li><a href="/projects">Projects</a></li>
+                    <li><a href="/models">Models</a></li>
+                    <li><a href="/about">About</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <ul>
+                    <li><a href="mailto:hello.miltonpixel@gmail.com">Email</a></li>
+                    <li><a href="#">Support Center</a></li>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 EcoField Logger by <a href="/about#developer" style="color: #666;">MiltonPixel</a>. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var toggle = document.getElementById('mobileNavToggle');
+        var close = document.getElementById('mobileSidebarClose');
+        var sidebar = document.getElementById('mobileSidebar');
+        var overlay = document.getElementById('mobileSidebarOverlay');
+
+        function openSidebar() {
+          sidebar.classList.add('open');
+          overlay.classList.add('open');
+          toggle.classList.add('open');
+        }
+
+        function closeSidebar() {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('open');
+          toggle.classList.remove('open');
+        }
+
+        if (toggle) toggle.addEventListener('click', openSidebar);
+        if (close) close.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
+      });
+    </script>
+
+</body>
+</html>

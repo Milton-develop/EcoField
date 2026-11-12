@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EcoField | Explore Species</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}?v={{ cache_bust }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/explore.css') }}?v={{ cache_bust }}" />
+    <link rel="icon" href="/static/images/icon-192x192.png" />
+</head>
+<body>
+
+    <div class="explore-hero">
+        <nav>
+            <div class="nav-bar">
+                <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Open navigation">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                 <div class="nav-brand">
+            <img src="/static/images/crest.png" alt="University of Ghana" class="nav-crest">
+            <div class="nav-brand-text">
+              <span class="nav-uni-name">University of Ghana</span>
+              <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+            </div>
+          </div>
+                <div class="nav-links desktop-nav">
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/research">Research</a></li>
+                        <li><a href="/explore" class="active">Explore</a></li>
+                        <li><a href="/projects">Projects</a></li>
+                        <li><a href="/models">Models</a></li>
+                        <li><a href="/about">About</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="mobile-sidebar-overlay" id="mobileSidebarOverlay"></div>
+        <div class="mobile-sidebar" id="mobileSidebar">
+            <div class="mobile-sidebar-brand">
+          <img src="/static/images/crest.png" alt="University of Ghana" class="nav-crest">
+          <div class="nav-brand-text">
+            <span class="nav-uni-name">University of Ghana</span>
+            <span class="nav-dept-name">Department of Animal Biology &amp; Conservation Science</span>
+          </div>
+          <button class="mobile-sidebar-close" id="mobileSidebarClose" aria-label="Close navigation">
+            <span class="close-line"></span>
+            <span class="close-line"></span>
+          </button>
+        </div>
+            <nav class="mobile-sidebar-nav">
+                <a href="/" class="mobile-sidebar-link">Home</a>
+                <a href="/research" class="mobile-sidebar-link">Research</a>
+                <a href="/explore" class="mobile-sidebar-link active">Explore</a>
+                <a href="/projects" class="mobile-sidebar-link">Projects</a>
+                <a href="/models" class="mobile-sidebar-link">Models</a>
+                <a href="/about" class="mobile-sidebar-link">About</a>
+            </nav>
+        </div>
+        <div class="explore-hero-content">
+            <h1>Explore <span style="color: #37b23e">Biodiversity</span></h1>
+            <p>Search for thousands of species known to some areas in Ghana and 
+                the world, ecological concepts, and conservation topics. 
+                Your ecology knowledge hub.</p>
+        </div>
+    </div>
+
+    <div class="explore-layout">
+        <main class="explore-main">
+            <div class="search-section">
+                <div class="search-bar">
+                    <input type="text" id="species-search" placeholder="Search for a species, habitat, or ecological term..." />
+                    <button id="search-btn">Search</button>
+                </div>
+                <div class="browse-categories" id="browse-categories">
+                    <h3>Browse by Category</h3>
+                    <div class="category-chips" id="category-chips"></div>
+                </div>
+            </div>
+
+            <div class="results-section" id="results-section">
+                <div class="results-header">
+                    <h2 id="results-title">Browse Local Species</h2>
+                </div>
+                <div class="results-grid" id="results-grid"></div>
+                <div class="species-detail" id="species-detail" style="display:none;">
+                    <button class="back-btn" id="back-btn">&larr; Back to results</button>
+                    <div id="detail-content"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="chat-bubble" id="chat-bubble" title="Ask EcoBot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+
+    <div class="chat-popup" id="chat-popup">
+        <div class="chat-popup-header">
+            <div>
+                <h3>EcoBot</h3>
+                <p>Ask me about ecology &amp; species</p>
+            </div>
+            <button class="chat-close" id="chat-close">&times;</button>
+        </div>
+        <div class="chat-popup-messages" id="chat-messages">
+            <div class="chat-msg bot">
+               Hi! I'm EcoBot. Enter a species, ecological concept, or conservation topic for a quick summary.
+               Please use direct terms (e.g., Ecology or Periplaneta americana) instead of full questions.
+            </div>
+        </div>
+        <div class="chat-popup-input">
+            <input type="text" id="chat-input" placeholder="Type your question..." />
+            <button id="chat-send">Send</button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <h3>EcoField</h3>
+                <p>Proudly developed at the University of Ghana (Department 
+                    of Animal Biology and Conservation Science) and built 
+                    to serve researchers, institutions, and conservation 
+                    organizations everywhere.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/research">Research</a></li>
+                    <li><a href="/explore">Explore</a></li>
+                    <li><a href="/projects">Projects</a></li>
+                    <li><a href="/models">Models</a></li>
+                    <li><a href="/about">About</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <ul>
+                    <li><a href="mailto:hello.miltonpixel@gmail.com">Email</a></li>
+                    <li><a href="#">Support Center</a></li>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 EcoField Logger by <a href="/about#developer" style="color: #666;">MiltonPixel</a>. All rights reserved.</p>
+        </div>
+    </footer>
+
+<script>
+var speciesData = {{ species_data|safe }};
+
+function getLocalSpecies() {
+    var list = [];
+    for (var loc in speciesData) {
+        for (var cat in speciesData[loc]) {
+            if (cat === "methods" || cat === "Habitat" || cat === "Biodiversity") continue;
+            var items = speciesData[loc][cat];
+            if (Array.isArray(items)) {
+                items.forEach(function(s) {
+                    if (s.name && s.scientific) {
+                        list.push({
+                            name: s.name,
+                            scientific: s.scientific,
+                            category: cat,
+                            location: loc,
+                            local: true
+                        });
+                    }
+                });
+            }
+        }
+    }
+    if (speciesData["Shai Hills"] && speciesData["Shai Hills"]["Biodiversity"]) {
+        speciesData["Shai Hills"]["Biodiversity"].forEach(function(s) {
+            if (s.name && s.scientific) {
+                list.push({
+                    name: s.name,
+                    scientific: s.scientific,
+                    category: "Biodiversity",
+                    location: "Shai Hills",
+                    local: true
+                });
+            }
+        });
+    }
+    return list;
+}
+
+var localSpecies = getLocalSpecies();
+
+function getCategories() {
+    var cats = {};
+    for (var loc in speciesData) {
+        for (var cat in speciesData[loc]) {
+            if (cat === "methods" || cat === "Habitat") continue;
+            if (!cats[cat]) cats[cat] = 0;
+            var items = speciesData[loc][cat];
+            if (Array.isArray(items)) cats[cat] += items.length;
+        }
+    }
+    return cats;
+}
+
+function renderCategoryChips() {
+    var container = document.getElementById("category-chips");
+    var cats = getCategories();
+    var sorted = Object.keys(cats).sort();
+    var html = '<button class="chip active" data-cat="all">All (' + localSpecies.length + ')</button>';
+    sorted.forEach(function(c) {
+        html += '<button class="chip" data-cat="' + c + '">' + c + ' (' + cats[c] + ')</button>';
+    });
+    container.innerHTML = html;
+
+    container.querySelectorAll(".chip").forEach(function(chip) {
+        chip.addEventListener("click", function() {
+            container.querySelectorAll(".chip").forEach(function(c) { c.classList.remove("active"); });
+            this.classList.add("active");
+            var cat = this.getAttribute("data-cat");
+            if (cat === "all") {
+                renderLocalResults(localSpecies);
+            } else {
+                renderLocalResults(localSpecies.filter(function(s) { return s.category === cat; }));
+            }
+        });
+    });
+}
+
+function renderLocalResults(list) {
+    var grid = document.getElementById("results-grid");
+    var title = document.getElementById("results-title");
+    if (list.length === 0) {
+        grid.innerHTML = '<p class="no-results">No species found.</p>';
+        title.textContent = "Local Species (0)";
+        return;
+    }
+    title.textContent = "Local Species (" + list.length + ")";
+    var html = "";
+    list.forEach(function(s) {
+        html += '<div class="result-card local" data-name="' + s.name + '" data-sci="' + s.scientific + '" data-cat="' + s.category + '" data-loc="' + s.location + '">';
+        html += '<span class="result-category">' + s.category + '</span>';
+        html += '<h3>' + s.name + '</h3>';
+        html += '<p class="result-scientific"><em>' + s.scientific + '</em></p>';
+        html += '<span class="result-location">' + s.location + '</span>';
+        html += '</div>';
+    });
+    grid.innerHTML = html;
+    grid.querySelectorAll(".result-card").forEach(function(card) {
+        card.addEventListener("click", function() {
+            var name = this.getAttribute("data-name");
+            var sci = this.getAttribute("data-sci");
+            showLocalDetail(name, sci, this.getAttribute("data-cat"), this.getAttribute("data-loc"));
+        });
+    });
+    document.getElementById("species-detail").style.display = "none";
+    grid.style.display = "grid";
+}
+
+function showLocalDetail(name, sci, cat, loc) {
+    var grid = document.getElementById("results-grid");
+    var detail = document.getElementById("species-detail");
+    var content = document.getElementById("detail-content");
+    grid.style.display = "none";
+    detail.style.display = "block";
+    content.innerHTML = '<div class="detail-card">' +
+        '<span class="result-category">' + cat + '</span>' +
+        '<h2>' + name + '</h2>' +
+        '<p class="result-scientific"><em>' + sci + '</em></p>' +
+        '<p class="detail-location"><strong>Location:</strong> ' + loc + '</p>' +
+        '<p class="detail-note">This species is part of the EcoField local species database. <a href="https://en.wikipedia.org/wiki/' + encodeURIComponent(sci) + '" target="_blank">Search Wikipedia for more information</a>.</p>' +
+        '</div>';
+}
+
+function renderWikipediaResults(results) {
+    var grid = document.getElementById("results-grid");
+    var title = document.getElementById("results-title");
+    if (results.length === 0) {
+        grid.innerHTML = '<p class="no-results">No results found. Try a different search term.</p>';
+        title.textContent = "Search Results (0)";
+        return;
+    }
+    title.textContent = "Search Results (" + results.length + ")";
+    var html = "";
+    results.forEach(function(r) {
+        html += '<div class="result-card wiki" data-title="' + r.title + '" data-desc="' + (r.description || '').replace(/"/g, '&quot;') + '" data-url="' + r.url + '" data-thumb="' + (r.thumbnail || '') + '">';
+        if (r.thumbnail) {
+            html += '<div class="result-thumb"><img src="' + r.thumbnail + '" alt="' + r.title + '" /></div>';
+        }
+        html += '<h3>' + r.title + '</h3>';
+        html += '<p class="result-desc">' + (r.description || '').substring(0, 200) + '</p>';
+        html += '<a href="' + r.url + '" target="_blank" class="result-link">Read more on Wikipedia</a>';
+        html += '</div>';
+    });
+    grid.innerHTML = html;
+    document.getElementById("species-detail").style.display = "none";
+    grid.style.display = "grid";
+}
+
+function doSearch(query) {
+    if (!query.trim()) return;
+    document.getElementById("results-title").textContent = "Searching...";
+    var grid = document.getElementById("results-grid");
+    grid.innerHTML = '<p class="no-results">Searching Wikipedia for species information...</p>';
+
+    var local = localSpecies.filter(function(s) {
+        return s.name.toLowerCase().includes(query.toLowerCase()) ||
+               s.scientific.toLowerCase().includes(query.toLowerCase());
+    });
+
+    fetch("/api/explore/species?q=" + encodeURIComponent(query))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.results && data.results.length > 0) {
+                renderWikipediaResults(data.results);
+            } else if (local.length > 0) {
+                renderLocalResults(local);
+            } else {
+                grid.innerHTML = '<p class="no-results">No results found. Try a different search term.</p>';
+                document.getElementById("results-title").textContent = "Search Results (0)";
+            }
+        })
+        .catch(function() {
+            if (local.length > 0) {
+                renderLocalResults(local);
+            } else {
+                grid.innerHTML = '<p class="no-results">Search unavailable. Showing local species only.</p>';
+                document.getElementById("results-title").textContent = "Search Results (0)";
+            }
+        });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    renderCategoryChips();
+    renderLocalResults(localSpecies);
+
+    document.getElementById("search-btn").addEventListener("click", function() {
+        doSearch(document.getElementById("species-search").value);
+    });
+    document.getElementById("species-search").addEventListener("keyup", function(e) {
+        if (e.key === "Enter") doSearch(this.value);
+    });
+
+    document.getElementById("back-btn").addEventListener("click", function() {
+        document.getElementById("species-detail").style.display = "none";
+        document.getElementById("results-grid").style.display = "grid";
+    });
+
+    var chatMessages = document.getElementById("chat-messages");
+    var chatInput = document.getElementById("chat-input");
+    var chatSend = document.getElementById("chat-send");
+
+    function addChatMsg(text, isUser) {
+        var div = document.createElement("div");
+        div.className = "chat-msg " + (isUser ? "user" : "bot");
+        div.textContent = text;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addChatMarkdown(text) {
+        var div = document.createElement("div");
+        div.className = "chat-msg bot";
+        div.innerHTML = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function sendChat() {
+        var msg = chatInput.value.trim();
+        if (!msg) return;
+        addChatMsg(msg, true);
+        chatInput.value = "";
+        addChatMsg("Thinking...", false);
+        fetch("/api/explore/chat", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({message: msg})
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            chatMessages.removeChild(chatMessages.lastChild);
+            addChatMarkdown(data.reply);
+        })
+        .catch(function() {
+            chatMessages.removeChild(chatMessages.lastChild);
+            addChatMsg("Sorry, I couldn't process that request. Please try again.", false);
+        });
+    }
+
+    chatSend.addEventListener("click", sendChat);
+    chatInput.addEventListener("keyup", function(e) {
+        if (e.key === "Enter") sendChat();
+    });
+
+    document.getElementById("chat-bubble").addEventListener("click", function() {
+        document.getElementById("chat-popup").classList.add("open");
+        this.style.display = "none";
+    });
+    document.getElementById("chat-close").addEventListener("click", function() {
+        document.getElementById("chat-popup").classList.remove("open");
+        document.getElementById("chat-bubble").style.display = "flex";
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var toggle = document.getElementById('mobileNavToggle');
+    var close = document.getElementById('mobileSidebarClose');
+    var sidebar = document.getElementById('mobileSidebar');
+    var overlay = document.getElementById('mobileSidebarOverlay');
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      overlay.classList.add('open');
+      toggle.classList.add('open');
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+      toggle.classList.remove('open');
+    }
+
+    if (toggle) toggle.addEventListener('click', openSidebar);
+    if (close) close.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+});
+</script>
+</body>
+</html>

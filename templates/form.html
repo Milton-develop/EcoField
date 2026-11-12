@@ -87,6 +87,7 @@
 
         <br>
 
+      {%if session.get('user_role')=='student'%}
       <p>Group ID <span style='color: red;'>*</span></p>
       <div id="group-alert" style="display:none; background:#f8d7da; color:#721c24; padding:8px 12px; margin-bottom:10px; border-radius:5px; border:1px solid #f5c6cb; font-size:14px;">
         ⚠️ This group does not exist in the system.
@@ -111,6 +112,14 @@
       </select>
 
       <br>
+      {%endif%}
+
+
+      {%if session.get('user_role')=='admin'%}
+      <label>Group ID <span style='color: red;'>*</span></label>
+          <input type="text" name="group_id" id="group_id" placeholder="Admin is not allowed to enter data" disabled>
+      <br>
+      {%endif%}
 
       <label for="member_name">Your Name <span style='color: red;'>*</span></label>
       <br>
